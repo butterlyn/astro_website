@@ -94,6 +94,14 @@ skips deployment. The next push fixes it and runs the full pipeline. Inspect wit
 `gh run list --branch dummy/pipeline-proof-20260912` and
 `gh run watch <run-id> --exit-status`.
 
+The [deliberate-failure run](https://github.com/butterlyn/astro_website/actions/runs/34636133367)
+failed at `pnpm check` and skipped the entire deployment job. Its frozen install,
+setup checks, formatting and lint passed. The temporary failing source file was
+then removed; the required checks remain intact. Local validation passed all 25
+browser/report checks after fixing enlarged-text overflow. The mobile report
+recorded performance/accessibility/best-practices scores of 100, LCP 0.8 seconds
+and CLS 0; SEO is intentionally limited by preview indexing restrictions.
+
 `main`, public visibility and its enforced `Setup validation` protection are
 preserved. This disposable workflow never ships to `main`; add permanent site
 checks to branch protection when the production workflow is approved and available
