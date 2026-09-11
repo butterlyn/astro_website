@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { previewWorker } from "./preview-guard.ts";
+import { waitForPreviewCommit } from "./preview-ready.ts";
 
 const [origin, commit] = process.argv.slice(2);
 if (!origin || !commit)
@@ -17,6 +18,8 @@ async function get(path: string) {
     signal: AbortSignal.timeout(30_000),
   });
 }
+
+await waitForPreviewCommit(get, commit);
 
 // Retry only for initial workers.dev propagation; content assertions still fail the job.
 let home: Response | undefined;

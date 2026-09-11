@@ -78,6 +78,9 @@ tested `dist/` and publishes its SHA-256 as a job output. Deployment downloads
 that run's artifact, verifies its digest and commit, and deploys without rebuilding.
 `dist/build.json`, the Actions summary and the live smoke check tie the output to
 its validated commit.
+The smoke check waits for that commit to appear before checking page content;
+the separate curl check also retries temporary HTTP failures during rollout.
+Both retries are bounded and fail the job if the new preview remains unavailable.
 
 Workflow permissions are read-only and Actions are pinned to reviewed release
 commit SHAs. Cloudflare secrets are present only in trusted preflight, deploy and

@@ -150,7 +150,7 @@ jobs:
           PREVIEW_URL: ${{ steps.deployment.outputs.url }}
         run: |
           pnpm smoke:preview "$PREVIEW_URL" "$GITHUB_SHA"
-          curl --fail --silent --show-error --retry 3 --max-time 30 "$PREVIEW_URL/" --output /dev/null
+          curl --fail --silent --show-error --retry 5 --retry-all-errors --retry-delay 3 --retry-max-time 45 --max-time 15 "$PREVIEW_URL/" --output /dev/null
           printf 'Preview: %s\n\nDeployed commit: `%s`\n' "$PREVIEW_URL" "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
 
   cleanup:
