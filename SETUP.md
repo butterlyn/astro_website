@@ -4,9 +4,10 @@ Checklist for reproducing the tooling this repository expects. Everything that
 can be project-scoped is committed (skills, MCP server config, editor
 recommendations). The "per machine" items are the only manual steps.
 
-Legend: `[x]` done on the originating machine on 2026-09-11, `[ ]` pending.
-Version numbers are what was current at setup; re-check before pinning in
-`package.json` (see `specs/spec.md`, section 3).
+Legend: `[x]` completed, `[ ]` pending. Machine state was independently checked
+on 2026-09-12. Node, pnpm, TypeScript and the Astro checker are now pinned in
+`.nvmrc`, `package.json` and `pnpm-lock.yaml`; preserve these pins when scaffolding
+the site and review compatibility before upgrading them.
 
 ## 1. Per machine (one time)
 
@@ -15,17 +16,20 @@ Version numbers are what was current at setup; re-check before pinning in
 - [x] WSL2 with Ubuntu 24.04 (any Linux works; commands assume apt and bash).
 - [x] Node.js 24 LTS through nvm: `nvm install 24 && nvm alias default 24`.
       Astro needs Node 22.12 or newer; odd-numbered Node releases are not LTS.
-- [ ] After restarting Claude Code from a new terminal: `nvm uninstall 25.2.1`
-      (the session that wrote this file was still running from it). A session
-      restarted in a terminal opened before `~/.bashrc` changed keeps the old
-      PATH and the old Node; check with `node -v` before launching `claude`.
+- [x] Node 25.2.1 has been removed. The active nvm installation is 24.21.0.
+      Run `nvm use` in this repository. After shell configuration changes,
+      open a fresh terminal and check `node -v` before launching an agent.
 - [x] pnpm 12, installed into that Node: `npm install -g pnpm@12.4.1`.
       `packageManager` in `package.json` will pin the exact version and pnpm
       switches itself to it; Corepack is not used. Check `which -a pnpm`
       resolves to the nvm path first, not a Windows shim under `/mnt/c`.
-      Quirk on the originating machine: a stray `package.json` in the parent
-      `Coding` folder pins `pnpm@10.24.0`, so `pnpm -v` reports 10.x until
-      this repo has its own `package.json` (the nearest pin wins).
+      The old parent `Coding/package.json` pin has been removed; this repo's
+      `packageManager` field now selects pnpm 12.4.1.
+- [x] TypeScript 6.0.3 and `@astrojs/check` 0.9.10 are pinned together.
+      The checker's published peer range is `^5.0.0 || ^6.0.0`, so TypeScript
+      7.x is outside its supported range. `pnpm-workspace.yaml` enables strict peer
+      checks and exact version saves. Add the remaining site dependencies
+      during scaffolding and commit the resulting lockfile.
 - [x] git identity set, `git config --global init.defaultBranch main`.
 - [x] GitHub CLI logged in: `gh auth login` with scopes `repo` and `workflow`
       (`workflow` is required to push `.github/workflows/` files).
@@ -64,8 +68,9 @@ Version numbers are what was current at setup; re-check before pinning in
       trust_level = "trusted"
       ```
 
-- [x] Cloudflare skills come from the repo (see section 2). If they are ever
-      missing: `npx skills experimental_install` restores `skills-lock.json`.
+- [x] Cloudflare skills come from the committed repo snapshot (see section 2).
+      All five content hashes and Claude symlinks were verified. Restore missing
+      skills from Git using the instructions below.
 - [ ] Deliberately not set up: the Context7 connector, and `AGENTS.md` /
       `CLAUDE.md` (to be written with `plan.md`, per `specs/spec.md` section 9).
 
@@ -94,12 +99,31 @@ Version numbers are what was current at setup; re-check before pinning in
 | `.claude/settings.json` | Project settings for Claude Code; currently only disables account-level claude.ai connectors in this repo. |
 | `.agents/skills/` | Cloudflare skills for Codex, installed with `npx skills add cloudflare/skills` and pruned to `cloudflare`, `wrangler`, `workers-best-practices`, `web-perf`, `turnstile-spin`. |
 | `.claude/skills/` | Symlinks into `.agents/skills/` so Claude Code sees the same skills. |
-| `skills-lock.json` | Pinned skill sources and hashes. |
+| `skills-lock.json` | Skill source metadata and content hashes; exact installed files are versioned in Git. Upstream revisions are not pinned here. |
+| `.nvmrc`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml` | Pinned setup dependencies and strict peer checks; the site scaffold extends these files. |
+| `scripts/verify-skills.mjs` | Verifies installed skill content hashes and Claude symlinks. |
+| `scripts/cloudflare-preflight.mjs` | Checks account access and the workers.dev subdomain using read-only API calls. |
+| `.github/workflows/setup-checks.yml` | Validates setup; the setup branch also checks GitHub-held Cloudflare credentials. |
 | `.vscode/extensions.json` | Recommended editor extensions. |
 | `.gitignore` | Astro, pnpm, Wrangler and Playwright outputs, env files, agent-local settings. |
 
 Add a skill: `npx skills add <owner/repo>` (installs to `.agents/skills` and
 links `.claude/skills`). Remove one: `npx skills remove <name>`.
+
+To recover the exact committed skills, inspect local edits first, then restore
+the snapshot and verify it:
+
+```bash
+git diff -- .agents/skills .claude/skills skills-lock.json
+# Discards local edits to these paths; preserve any intentional edits first.
+git restore --source=HEAD --worktree -- .agents/skills .claude/skills skills-lock.json
+node scripts/verify-skills.mjs
+```
+
+Do not use `npx skills experimental_install` for exact recovery: the installed
+skills CLI resolves these unpinned upstream sources again. Treat upstream
+reinstallation as an update and review its file and hash changes. A fresh clone
+already contains the exact skills and symlinks.
 
 ## 3. Accounts and secrets
 
@@ -120,23 +144,76 @@ links `.claude/skills`). Remove one: `npx skills remove <name>`.
 
 - [ ] Do not connect the Cloudflare dashboard's Workers Builds git integration.
       GitHub Actions is the only deployer (`specs/spec.md`, D-11).
-- [ ] Branch ruleset on `main` requiring the CI checks, once
-      `.github/workflows/` exists (spec R-08).
+- [x] No paid GitHub upgrade is required for the private-repository workflow.
+      GitHub Free does not provide enforced branch protection/rulesets or
+      deployment environments for private repositories. Use the CI safeguards
+      below and keep this limitation explicit (spec R-08).
 - [ ] Production domain (spec R-05, launch prerequisite).
 
 No `wrangler login` is needed locally: `wrangler dev` serves static assets
 offline and deployments run in CI.
+
+### Cloudflare preflight
+
+The setup workflow runs on pushes to `setup/review-fixes`; it performs a frozen
+install and setup checks before the credential check. Pull-request checks never
+receive Cloudflare secrets. The script checks that the token can list Workers
+in the supplied account and that a workers.dev subdomain exists. It does not
+print token values, account IDs, Worker names or the subdomain. Only GET requests
+are issued, and credentials are not forwarded to redirects.
+
+For a subsequent credential check, push a reviewed change to the setup branch.
+The dummy workflow must also run `pnpm preflight:cloudflare` in its trusted
+deployment job before deployment. Local execution is optional and requires the
+two Cloudflare environment variables; GitHub secret values cannot be downloaded.
+
+A passing preflight verifies read access. Deployment and deletion permissions
+are established by the dummy deployment and its later cleanup. The dashboard
+must separately confirm that the token's account permissions include editing
+Workers Scripts and that Workers Builds is disconnected. If credentials fail,
+correct the token/account pair with the `gh secret set` commands above. If the
+subdomain is missing, create one under Workers & Pages in the Cloudflare dashboard.
+
+### Private repository without a paid GitHub plan
+
+Keep GitHub Actions as the deployer and implement these controls when adding the
+site workflow:
+
+- Run validation for pull requests and the deployment branch. The deploy job
+  must depend on all validation jobs succeeding (`needs`), including browser
+  checks of the built artifact. Failed or cancelled validation must skip deploy.
+- Deploy only on pushes to the explicitly selected branch: the throwaway branch
+  for the dummy, and `main` for a later approved production workflow. Pull requests
+  never deploy or receive Cloudflare credentials.
+- Deploy the tested artifact from the same commit, use read-only workflow
+  permissions, and provide the Cloudflare secrets only to deployment/cleanup
+  steps. Pin third-party actions to reviewed commit SHAs.
+- Serialize deployment and cleanup for each Worker. The cleanup marker skips
+  build/deploy and selects deletion only; a stale deployment must not recreate
+  the Worker after cleanup.
+- Review changes before merging and demonstrate that a deliberate validation
+  failure skips deployment during the dummy run.
+
+These controls prevent ordinary failed builds from deploying while the workflow
+remains intact. They cannot stop a repository writer from pushing directly to
+`main`, changing the workflow, or bypassing the checks. Running the dummy on
+`main` does not change this limitation. GitHub-enforced branch protection is
+available without a paid plan for **public** repositories, which exposes the
+source and Git history; changing visibility requires a separate decision.
+
+Sources: [protected branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches),
+[deployment environments](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments),
+[job dependencies](https://docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax#jobsjob_idneeds).
 
 ## 4. Known consequences of keeping the repo on `/mnt/c`
 
 The repo lives on the Windows drive, mounted in WSL over 9p. This was a
 deliberate choice; expect the following.
 
-- pnpm installs are slower than on the Linux filesystem, and pnpm copies
-  packages instead of hard-linking them from its store, because the store
-  (Linux home) and the project (Windows drive) are on different filesystems.
-  Optional fix, since hard links do work on `/mnt/c`: put the store on the
-  same drive with `pnpm config set store-dir /mnt/c/Users/<you>/.pnpm-store --global`.
+- File operations can be slower than on the Linux filesystem. The verified
+  pnpm 12 install used `/mnt/c/.pnpm-store/v11` and reported hard-linking packages
+  into this project, so the old cross-filesystem copying workaround is no longer
+  needed on this machine. Check the install output if the store location changes.
 - Astro's dev server may miss file changes. If `pnpm dev` does not reload,
   set `vite.server.watch.usePolling: true` in `astro.config.mjs`.
 - Files created from Windows carry spurious executable bits. This clone has
@@ -151,11 +228,18 @@ gh auth status          # logged in, scopes include repo and workflow
 claude mcp list         # github and cloudflare-docs connected
 codex mcp list          # github (Bearer token env var) and cloudflare-docs
 npx -y skills ls        # the five Cloudflare skills
+pnpm install --frozen-lockfile
+pnpm check:setup        # skill integrity and preflight failure-path tests
 ```
 
 ## 6. Next steps
 
 1. Review and approve `specs/spec.md`.
 2. Write `plan.md` with the implementation tasks (spec section 9).
-3. Scaffold the project with `pnpm create astro`, pin versions, add the CI
-   workflow and `wrangler.jsonc`, then add the Cloudflare secrets above.
+3. Extend the existing package manifest and lockfile with the Astro scaffold,
+   required scripts, site CI workflow and `wrangler.jsonc`. Reuse the existing
+   Cloudflare repository secrets.
+
+For the throwaway pipeline proof, `prompts/dummy-site.md` explicitly permits
+placeholder content and omitting `plan.md`. Keep it on its own branch and use
+the pinned setup dependencies and safeguards above.

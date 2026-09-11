@@ -172,6 +172,16 @@ Use a scoped Cloudflare API token stored as a GitHub secret, never committed sou
 
 Protect the production branch and environment using controls supported by the company's GitHub plan. Serialize production deployments so an older job cannot overwrite a newer release. Keep ordinary deployment in GitHub Actions, as required by C-02.
 
+**Current setup decision (2026-09-12):** Do not require a paid GitHub upgrade.
+For the current private repository on GitHub Free, use the workflow safeguards
+in `SETUP.md`: validate pull requests and deployment-branch pushes, make deployment
+depend on successful validation, restrict deployment to the intended push branch,
+isolate deployment secrets, and serialize writes to each Worker. These safeguards
+block ordinary failed builds from deployment while the workflow remains intact;
+they do not provide server-enforced branch protection or protected environments,
+and a repository writer can bypass them. Record this limitation in the pipeline
+proof. A future change to visibility or a paid plan requires a separate decision.
+
 Shared preview deployments are optional until an editor/reviewer needs them; local Wrangler preview is part of the baseline. Any shared preview path needs explicit access and indexing rules.
 
 ### R-09 — Recovery and ownership
