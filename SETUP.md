@@ -114,7 +114,7 @@ To recover the exact committed skills, inspect local edits first, then restore
 the snapshot and verify it:
 
 ```bash
-git diff -- .agents/skills .claude/skills skills-lock.json
+git diff HEAD -- .agents/skills .claude/skills skills-lock.json
 # Discards local edits to these paths; preserve any intentional edits first.
 git restore --source=HEAD --worktree -- .agents/skills .claude/skills skills-lock.json
 node scripts/verify-skills.mjs
@@ -154,6 +154,10 @@ No `wrangler login` is needed locally: `wrangler dev` serves static assets
 offline and deployments run in CI.
 
 ### Cloudflare preflight
+
+Account read access and workers.dev configuration passed on 2026-09-12 using
+the existing repository secrets in [GitHub Actions run 34631656657](https://github.com/butterlyn/astro_website/actions/runs/34631656657).
+No credential replacement or subdomain creation is needed based on that check.
 
 The setup workflow runs on pushes to `setup/review-fixes`; it performs a frozen
 install and setup checks before the credential check. Pull-request checks never
@@ -227,7 +231,6 @@ pnpm -v                 # 12.x
 gh auth status          # logged in, scopes include repo and workflow
 claude mcp list         # github and cloudflare-docs connected
 codex mcp list          # github (Bearer token env var) and cloudflare-docs
-npx -y skills ls        # the five Cloudflare skills
 pnpm install --frozen-lockfile
 pnpm check:setup        # skill integrity and preflight failure-path tests
 ```
