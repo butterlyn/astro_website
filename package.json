@@ -8,10 +8,31 @@
   },
   "scripts": {
     "check:setup": "node scripts/verify-skills.mjs && node --test tests/setup/*.test.mjs",
-    "preflight:cloudflare": "node scripts/cloudflare-preflight.mjs"
+    "preflight:cloudflare": "node scripts/cloudflare-preflight.mjs",
+    "dev": "astro dev",
+    "check": "astro check && tsc --noEmit",
+    "check:pipeline": "node --test tests/pipeline/*.test.ts",
+    "lint": "biome lint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "build": "astro build && node scripts/preview-stamp.ts",
+    "preview:cloudflare": "wrangler dev --local --ip 127.0.0.1 --port 8787 --show-interactive-dev-session=false",
+    "test:e2e": "playwright test",
+    "smoke:preview": "node scripts/preview-smoke.ts"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
-    "typescript": "6.0.3"
+    "@axe-core/playwright": "4.13.0",
+    "@biomejs/biome": "2.5.13",
+    "@playwright/test": "1.63.0",
+    "@tailwindcss/vite": "4.3.3",
+    "@types/node": "24.13.4",
+    "astro": "7.3.2",
+    "lighthouse": "13.4.1",
+    "prettier": "3.9.6",
+    "prettier-plugin-astro": "1.0.0",
+    "tailwindcss": "4.3.3",
+    "typescript": "6.0.3",
+    "wrangler": "4.131.1"
   }
 }

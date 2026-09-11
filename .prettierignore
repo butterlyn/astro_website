@@ -1,0 +1,17 @@
+node_modules/
+dist/
+.astro/
+.wrangler/
+test-results/
+playwright-report/
+reports/
+artifact/
+# Preserve the vendored skills and approved setup/specification baseline.
+.agents/
+.claude/
+.codex/
+specs/
+prompts/
+SETUP.md
+skills-lock.json
+pnpm-lock.yaml

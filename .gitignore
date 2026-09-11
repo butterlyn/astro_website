@@ -17,6 +17,8 @@ test-results/
 playwright-report/
 blob-report/
 playwright/.cache/
+reports/
+artifact/
 
 # --- logs, OS and editor noise ---
 *.log

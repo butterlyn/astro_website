@@ -1,0 +1,184 @@
+name: Dummy preview
+
+on:
+  push:
+    branches: [dummy/pipeline-proof-20260912]
+  # Always validate PRs, including documentation-only changes and cleanup markers.
+  pull_request:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+# Serialize the complete lifecycle. The guard also rejects stale reruns.
+concurrency:
+  group: dummy-preview-${{ github.event_name == 'push' && 'astro-website-dummy-20260912' || github.ref }}
+  cancel-in-progress: false
+
+env:
+  ASTRO_TELEMETRY_DISABLED: "1"
+  WRANGLER_SEND_METRICS: "false"
+
+jobs:
+  mode:
+    name: Select preview operation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      cleanup: ${{ steps.mode.outputs.cleanup }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - id: mode
+        name: Inspect the cleanup marker on this commit
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = refs/heads/dummy/pipeline-proof-20260912 ] && [ -e .cleanup-preview ]; then
+            echo 'cleanup=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'cleanup=false' >> "$GITHUB_OUTPUT"
+          fi
+
+  validate:
+    name: Site validation
+    needs: mode
+    if: needs.mode.outputs.cleanup != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    outputs:
+      artifact-sha: ${{ steps.package.outputs.sha }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+      - name: Install pinned pnpm
+        run: npm install --global "$(node -p 'require("./package.json").packageManager')"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check:setup
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm check
+      - run: pnpm check:pipeline
+      - run: pnpm build
+      - run: pnpm exec wrangler deploy --dry-run
+      - run: pnpm exec playwright install --with-deps chromium firefox webkit
+      - name: Test the built artifact through local Wrangler
+        run: pnpm test:e2e
+      - id: package
+        name: Package the exact tested files and record their digest
+        run: |
+          mkdir artifact
+          tar -czf artifact/site.tar.gz dist
+          artifact_sha="$(sha256sum artifact/site.tar.gz | cut -d ' ' -f 1)"
+          echo "sha=$artifact_sha" >> "$GITHUB_OUTPUT"
+          printf 'Validated commit: `%s`\n\nArtifact SHA-256: `%s`\n' "$GITHUB_SHA" "$artifact_sha" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: tested-site-${{ github.sha }}-${{ github.run_attempt }}
+          path: artifact/site.tar.gz
+          if-no-files-found: error
+          retention-days: 7
+      - name: Retain browser evidence and Lighthouse reports
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: browser-evidence-${{ github.sha }}-${{ github.run_attempt }}
+          path: |
+            playwright-report/
+            test-results/
+            reports/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  deploy:
+    name: Deploy preview Worker
+    needs: [mode, validate]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dummy/pipeline-proof-20260912' && needs.mode.outputs.cleanup != 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+      - name: Install pinned pnpm
+        run: npm install --global "$(node -p 'require("./package.json").packageManager')"
+      - run: pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: tested-site-${{ github.sha }}-${{ github.run_attempt }}
+          path: artifact
+      - name: Verify and unpack the tested artifact without rebuilding
+        env:
+          EXPECTED_ARTIFACT_SHA: ${{ needs.validate.outputs.artifact-sha }}
+        run: |
+          printf '%s  artifact/site.tar.gz\n' "$EXPECTED_ARTIFACT_SHA" | sha256sum --check --strict
+          tar -xzf artifact/site.tar.gz
+          node --input-type=module -e 'import assert from "node:assert/strict"; import { readFileSync } from "node:fs"; assert.equal(JSON.parse(readFileSync("dist/build.json", "utf8")).commit, process.env.GITHUB_SHA);'
+      - id: guard
+        name: Reject stale pushes and cleanup markers before Cloudflare access
+        run: node scripts/preview-guard.ts deploy
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Read-only Cloudflare account and workers.dev preflight
+        if: steps.guard.outputs.current == 'true'
+        run: pnpm preflight:cloudflare
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - id: deployment
+        name: Deploy the tested static artifact to the preview Worker
+        if: steps.guard.outputs.current == 'true'
+        run: |
+          pnpm exec wrangler deploy --name astro-website-dummy-20260912 | tee "$RUNNER_TEMP/preview-deploy.log"
+          node scripts/preview-url.ts "$RUNNER_TEMP/preview-deploy.log" >> "$GITHUB_OUTPUT"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      - name: Smoke test the live URL and deployed commit
+        if: steps.guard.outputs.current == 'true'
+        env:
+          PREVIEW_URL: ${{ steps.deployment.outputs.url }}
+        run: |
+          pnpm smoke:preview "$PREVIEW_URL" "$GITHUB_SHA"
+          curl --fail --silent --show-error --retry 3 --max-time 30 "$PREVIEW_URL/" --output /dev/null
+          printf 'Preview: %s\n\nDeployed commit: `%s`\n' "$PREVIEW_URL" "$GITHUB_SHA" >> "$GITHUB_STEP_SUMMARY"
+
+  cleanup:
+    name: Delete preview Worker
+    needs: mode
+    if: github.event_name == 'push' && github.ref == 'refs/heads/dummy/pipeline-proof-20260912' && needs.mode.outputs.cleanup == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+      - name: Install pinned pnpm
+        run: npm install --global "$(node -p 'require("./package.json").packageManager')"
+      - run: pnpm install --frozen-lockfile
+      - id: guard
+        name: Verify the current cleanup commit and exact preview Worker
+        run: node scripts/preview-guard.ts cleanup
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Delete only the throwaway preview Worker and confirm absence
+        if: steps.guard.outputs.current == 'true'
+        run: |
+          pnpm exec wrangler delete astro-website-dummy-20260912
+          node scripts/preview-cleanup-check.ts
+          echo 'Preview Worker deletion confirmed by Cloudflare (HTTP 404). Safe to delete the throwaway branch.' >> "$GITHUB_STEP_SUMMARY"
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}

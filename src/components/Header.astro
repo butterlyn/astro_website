@@ -1,0 +1,14 @@
+---
+import { site } from "../data/site";
+---
+
+<header class="site-header page-width">
+  <a class="wordmark" href="/" aria-label={`${site.name} home`}>
+    <span class="brand-mark" aria-hidden="true"></span>
+    {site.name}
+  </a>
+  <nav aria-label="Main navigation">
+    <a href="/">Home</a>
+    <a href="/#about">About this preview</a>
+  </nav>
+</header>
