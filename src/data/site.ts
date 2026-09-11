@@ -1,16 +1,16 @@
 export const site = {
-  name: "Site preview",
-  title: "A little space for what comes next | Site preview",
+  name: "L.E.A.R.",
+  title: "L.E.A.R. | Learning Education and Excellence Resources",
   description:
-    "A temporary website preview with placeholder content. Explore a simple first look on any screen.",
+    "Explore the temporary website preview for L.E.A.R., Learning Education and Excellence Resources.",
   eyebrow: "A work in progress",
   heading: "A little space for what comes next.",
   introduction:
-    "Every good idea needs a place to begin. This is ours: a simple first look, with room for a story still taking shape.",
+    "Welcome to L.E.A.R., Learning Education and Excellence Resources. This is a first look at our website, with room for a story still taking shape.",
   about: {
     heading: "The beginning of something.",
     description:
-      "This temporary preview uses placeholder content. The company, its offering, and the details that make it different will find their home here once they are ready.",
+      "This temporary L.E.A.R. preview uses placeholder content. Our offering and the details that make it different will find their home here once they are ready.",
   },
   cards: [
     {
@@ -33,7 +33,7 @@ export const site = {
     },
   ],
   notFound: {
-    title: "Page not found | Site preview",
+    title: "Page not found | L.E.A.R.",
     heading: "A little off the path.",
     description:
       "That page is not here. Head back to the beginning and take another look.",
