@@ -2,19 +2,9 @@ name: Setup checks
 
 on:
   push:
-    branches: [setup/review-fixes]
+    branches: [main, setup/review-fixes]
+  # Required checks must run even when a PR changes only documentation.
   pull_request:
-    paths:
-      - .github/workflows/setup-checks.yml
-      - .nvmrc
-      - package.json
-      - pnpm-lock.yaml
-      - pnpm-workspace.yaml
-      - scripts/**
-      - tests/setup/**
-      - .agents/skills/**
-      - .claude/skills/**
-      - skills-lock.json
 
 permissions:
   contents: read
@@ -25,6 +15,7 @@ concurrency:
 
 jobs:
   validate:
+    name: Setup validation
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:

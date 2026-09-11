@@ -33,6 +33,7 @@ site on a new branch. That run extends the existing manifest/lockfile, adds the
 application scripts specified by R-07, and tests the deployment workflow. The
 current setup workflow only validates tooling and Cloudflare read access.
 
-The repository stays private without a paid GitHub upgrade. Validation must pass
-before a site deployment runs. GitHub Free cannot enforce protected branches in
-a private repository, so writers can still bypass or change those workflow checks.
+The repository is public so GitHub Free can enforce protection on `main`.
+Changes require a pull request and a passing `Setup validation` check; the rule
+also applies to administrators. Source, Git history and Actions logs are public.
+The site workflow must additionally require validation to pass before deployment.

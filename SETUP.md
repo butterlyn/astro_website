@@ -127,8 +127,10 @@ already contains the exact skills and symlinks.
 
 ## 3. Accounts and secrets
 
-- [x] GitHub repository `butterlyn/astro_website`, private, default branch
-      `main`. Move it to the company organisation once that is decided
+- [x] GitHub repository `butterlyn/astro_website`, public, default branch `main`.
+      The originator chose public visibility on 2026-09-12 to enable enforced
+      branch protection on GitHub Free. Source, Git history and Actions logs are
+      public. Move it to the company organisation once that is decided
       (`specs/intent.md`, Q-05).
 - [x] Cloudflare account (the free plan covers Workers Static Assets).
 - [x] Cloudflare API token from the "Edit Cloudflare Workers" template, plus
@@ -144,10 +146,10 @@ already contains the exact skills and symlinks.
 
 - [ ] Do not connect the Cloudflare dashboard's Workers Builds git integration.
       GitHub Actions is the only deployer (`specs/spec.md`, D-11).
-- [x] No paid GitHub upgrade is required for the private-repository workflow.
-      GitHub Free does not provide enforced branch protection/rulesets or
-      deployment environments for private repositories. Use the CI safeguards
-      below and keep this limitation explicit (spec R-08).
+- [x] Use GitHub Free with a public repository and enforced protection on `main`.
+      Require pull requests and the GitHub Actions `Setup validation` check,
+      require branches to be up to date, enforce the rule for administrators,
+      and block force pushes and branch deletion. See the settings below.
 - [ ] Production domain (spec R-05, launch prerequisite).
 
 No `wrangler login` is needed locally: `wrangler dev` serves static assets
@@ -159,9 +161,10 @@ Account read access and workers.dev configuration passed on 2026-09-12 using
 the existing repository secrets in [GitHub Actions run 34631656657](https://github.com/butterlyn/astro_website/actions/runs/34631656657).
 No credential replacement or subdomain creation is needed based on that check.
 
-The setup workflow runs on pushes to `setup/review-fixes`; it performs a frozen
-install and setup checks before the credential check. Pull-request checks never
-receive Cloudflare secrets. The script checks that the token can list Workers
+The setup workflow validates every pull request and pushes to `main` and
+`setup/review-fixes`. Only pushes to `setup/review-fixes` run the credential check,
+after a frozen install and setup checks pass. Pull-request checks never receive
+Cloudflare secrets. The script checks that the token can list Workers
 in the supplied account and that a workers.dev subdomain exists. It does not
 print token values, account IDs, Worker names or the subdomain. Only GET requests
 are issued, and credentials are not forwarded to redirects.
@@ -178,7 +181,22 @@ Workers Scripts and that Workers Builds is disconnected. If credentials fail,
 correct the token/account pair with the `gh secret set` commands above. If the
 subdomain is missing, create one under Workers & Pages in the Cloudflare dashboard.
 
-### Private repository without a paid GitHub plan
+### Enforced branch protection on GitHub Free
+
+Public visibility makes GitHub's branch protection available without upgrading
+the plan. `main` requires a pull request, up-to-date branch contents and the
+`Setup validation` check from the GitHub Actions app. Administrators are subject
+to the rule; force pushes and deletion are disabled. No second-person approval
+is required, so the sole repository owner can merge their own passing PRs.
+
+The required setup check runs for every pull request, with no path filters.
+When the site workflow exists, add its validation check names to branch
+protection after confirming they run on every PR. Keep the setup check too.
+Verify the live settings with:
+
+```bash
+gh api repos/butterlyn/astro_website/branches/main/protection
+```
 
 Keep GitHub Actions as the deployer and implement these controls when adding the
 site workflow:
@@ -198,12 +216,16 @@ site workflow:
 - Review changes before merging and demonstrate that a deliberate validation
   failure skips deployment during the dummy run.
 
-These controls prevent ordinary failed builds from deploying while the workflow
-remains intact. They cannot stop a repository writer from pushing directly to
-`main`, changing the workflow, or bypassing the checks. Running the dummy on
-`main` does not change this limitation. GitHub-enforced branch protection is
-available without a paid plan for **public** repositories, which exposes the
-source and Git history; changing visibility requires a separate decision.
+Branch protection and validation before deployment serve different purposes:
+GitHub blocks changes to `main` that have not passed its required checks, and
+the workflow blocks deployment of builds that fail validation. The dummy stays
+on its throwaway branch; running it on `main` is unnecessary. An administrator
+can still deliberately change repository protection settings.
+
+GitHub Free also supports deployment environments for public repositories.
+Configure the production environment when the approved production workflow is
+created; the dummy preview does not require one. Do not make this repository
+private again without revisiting the loss of free enforced protection.
 
 Sources: [protected branches](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches),
 [deployment environments](https://docs.github.com/en/actions/how-tos/deploy/configure-and-manage-deployments/manage-environments),

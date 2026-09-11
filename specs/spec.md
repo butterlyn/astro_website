@@ -172,15 +172,17 @@ Use a scoped Cloudflare API token stored as a GitHub secret, never committed sou
 
 Protect the production branch and environment using controls supported by the company's GitHub plan. Serialize production deployments so an older job cannot overwrite a newer release. Keep ordinary deployment in GitHub Actions, as required by C-02.
 
-**Current setup decision (2026-09-12):** Do not require a paid GitHub upgrade.
-For the current private repository on GitHub Free, use the workflow safeguards
-in `SETUP.md`: validate pull requests and deployment-branch pushes, make deployment
-depend on successful validation, restrict deployment to the intended push branch,
-isolate deployment secrets, and serialize writes to each Worker. These safeguards
-block ordinary failed builds from deployment while the workflow remains intact;
-they do not provide server-enforced branch protection or protected environments,
-and a repository writer can bypass them. Record this limitation in the pipeline
-proof. A future change to visibility or a paid plan requires a separate decision.
+**Current setup decision (2026-09-12):** The originator chose a public GitHub
+repository to obtain enforced branch protection without a paid upgrade. Protect
+`main` with required pull requests, up-to-date status checks from GitHub Actions,
+administrator enforcement, and disabled force pushes/deletion. Initially require
+`Setup validation`; add the site validation checks when that workflow exists.
+Required checks must run on every PR, including documentation-only changes.
+Continue to validate deployment-branch pushes, make deployment depend on successful
+validation, isolate deployment secrets, and serialize writes to each Worker.
+Configure the production environment when the production workflow is approved.
+Source, history and Actions logs are public; a later visibility change requires
+review of the resulting protection changes. No paid plan is authorized.
 
 Shared preview deployments are optional until an editor/reviewer needs them; local Wrangler preview is part of the baseline. Any shared preview path needs explicit access and indexing rules.
 
