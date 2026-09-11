@@ -1,0 +1,17 @@
+{
+  "name": "astro-website",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.4.1",
+  "engines": {
+    "node": ">=24.21.0 <25"
+  },
+  "scripts": {
+    "check:setup": "node scripts/verify-skills.mjs && node --test tests/setup/*.test.mjs",
+    "preflight:cloudflare": "node scripts/cloudflare-preflight.mjs"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "typescript": "6.0.3"
+  }
+}
