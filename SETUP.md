@@ -63,9 +63,12 @@ Version numbers are what was current at setup; re-check before pinning in
 - [ ] Deliberately not set up: the Context7 connector, and `AGENTS.md` /
       `CLAUDE.md` (to be written with `plan.md`, per `specs/spec.md` section 9).
 
-Note: Claude Code may also show an account-level "claude.ai Github" connector.
-It duplicates the project-scoped `github` server. Disconnect it under claude.ai
-Settings > Connectors if you want only the project-scoped one.
+- [x] `.claude/settings.json` sets `disableClaudeAiConnectors: true`, so the
+      account-level claude.ai connectors (GitHub, Google Drive, Gmail, Calendar,
+      Context7, Mermaid) are not injected into sessions in this repo. Only the
+      project-scoped servers in `.mcp.json` remain. The connectors stay
+      available in other projects and in claude.ai itself; to remove one from
+      the account entirely, use https://claude.ai/customize/connectors.
 
 ### Editor
 
@@ -82,6 +85,7 @@ Settings > Connectors if you want only the project-scoped one.
 | `specs/intent.md`, `specs/spec.md` | What to build and the proposed design. Agents read both before planning. |
 | `.mcp.json` | Claude Code MCP servers: `github` (GitHub's remote MCP, bearer token from `GITHUB_MCP_TOKEN`) and `cloudflare-docs` (no auth). |
 | `.codex/config.toml` | The same two MCP servers for Codex. |
+| `.claude/settings.json` | Project settings for Claude Code; currently only disables account-level claude.ai connectors in this repo. |
 | `.agents/skills/` | Cloudflare skills for Codex, installed with `npx skills add cloudflare/skills` and pruned to `cloudflare`, `wrangler`, `workers-best-practices`, `web-perf`, `turnstile-spin`. |
 | `.claude/skills/` | Symlinks into `.agents/skills/` so Claude Code sees the same skills. |
 | `skills-lock.json` | Pinned skill sources and hashes. |
