@@ -52,6 +52,7 @@ test("the Worker guard rejects production names, routes and custom builds", () =
   assert.doesNotThrow(() => assertPreviewConfig(config));
   for (const changed of [
     { name: "production" },
+    { name: "astro-website-dummy-20260912" },
     { routes: ["example.com/*"] },
     { workers_dev: false },
     { build: { command: "pnpm build" } },

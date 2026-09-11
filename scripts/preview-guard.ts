@@ -2,7 +2,11 @@ import { appendFileSync, existsSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 export const previewBranch = "dummy/pipeline-proof-20260912";
-export const previewWorker = "astro-website-dummy-20260912";
+export const previewWorker = "leer-preview";
+export const cleanupWorkers = [
+  previewWorker,
+  "astro-website-dummy-20260912",
+] as const;
 export const previewRepository = "butterlyn/astro_website";
 
 type GuardInput = {

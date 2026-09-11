@@ -5,7 +5,10 @@ pipeline using labeled placeholder content. Read [SETUP.md](SETUP.md) for the
 machine setup, existing secrets and enforced GitHub Free protection.
 
 Only `dummy/pipeline-proof-20260912` deploys, to the non-production Worker
-`astro-website-dummy-20260912`. The homepage and custom 404 share a static layout
+`leer-preview` at <https://leer-preview.butterlyn.workers.dev/>.
+The original Worker, `astro-website-dummy-20260912`, remains available at its old
+address until cleanup; future updates deploy only to `leer-preview`.
+The homepage and custom 404 share a static layout
 and require no browser JavaScript. Copy lives in `src/data/site.ts`. Every page
 has `noindex` metadata and an `X-Robots-Tag` header; robots.txt disallows crawling.
 This public preview contains no confidential content.
@@ -86,8 +89,9 @@ Deployment and cleanup share one workflow concurrency queue with cancellation
 disabled. Before Cloudflare access, a guard queries the current GitHub branch head
 and rejects stale commits, unexpected Worker configuration and the wrong marker
 state. A queued or rerun older deployment cannot recreate the Worker after
-cleanup. If the branch changes during an active deploy, cleanup waits for that
-workflow and then deletes the Worker.
+cleanup. The original concurrency key is retained so historical workflow runs
+remain in the same queue. If the branch changes during an active deploy, cleanup
+waits for that workflow and then deletes both preview Workers.
 
 The intentional first push includes a TypeScript error to prove validation failure
 skips deployment. The next push fixes it and runs the full pipeline. Inspect with
@@ -114,9 +118,9 @@ dedicated marker commit:
 
 ```bash
 git switch dummy/pipeline-proof-20260912
-printf 'Delete the throwaway preview Worker.\n' > .cleanup-preview
+printf 'Delete both throwaway preview Workers.\n' > .cleanup-preview
 git add .cleanup-preview
-git commit -m "Clean up the throwaway preview Worker"
+git commit -m "Clean up the throwaway preview Workers"
 git push
 gh run list --branch dummy/pipeline-proof-20260912
 gh run watch <cleanup-run-id> --exit-status
@@ -124,8 +128,9 @@ gh run watch <cleanup-run-id> --exit-status
 
 That push runs only the operation selector and deletion job. Validation, build and
 deployment are skipped. Deletion uses pinned Wrangler and confirms Cloudflare
-returns HTTP 404 for the exact Worker. After success, check the former public URL
-and delete the branch:
+returns HTTP 404 for both `leer-preview` and `astro-website-dummy-20260912`.
+An already absent Worker is skipped, so a partially completed cleanup can be
+retried. After success, check both former public URLs and delete the branch:
 
 ```bash
 git push origin --delete dummy/pipeline-proof-20260912

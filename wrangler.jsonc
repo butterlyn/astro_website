@@ -1,6 +1,6 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "astro-website-dummy-20260912",
+  "name": "leer-preview",
   "compatibility_date": "2026-09-11",
   "workers_dev": true,
   "preview_urls": false,
