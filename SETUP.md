@@ -15,8 +15,10 @@ Version numbers are what was current at setup; re-check before pinning in
 - [x] WSL2 with Ubuntu 24.04 (any Linux works; commands assume apt and bash).
 - [x] Node.js 24 LTS through nvm: `nvm install 24 && nvm alias default 24`.
       Astro needs Node 22.12 or newer; odd-numbered Node releases are not LTS.
-- [ ] After restarting Claude Code: `nvm uninstall 25.2.1` (the session that
-      wrote this file was still running from it).
+- [ ] After restarting Claude Code from a new terminal: `nvm uninstall 25.2.1`
+      (the session that wrote this file was still running from it). A session
+      restarted in a terminal opened before `~/.bashrc` changed keeps the old
+      PATH and the old Node; check with `node -v` before launching `claude`.
 - [x] pnpm 12, installed into that Node: `npm install -g pnpm@12.4.1`.
       `packageManager` in `package.json` will pin the exact version and pnpm
       switches itself to it; Corepack is not used. Check `which -a pnpm`
@@ -49,7 +51,11 @@ Version numbers are what was current at setup; re-check before pinning in
 
       `.mcp.json` and `.codex/config.toml` read this variable, so no token is
       stored in the repo. Any process in your shell could already run
-      `gh auth token`, so this adds no new exposure.
+      `gh auth token`, so this adds no new exposure. The variable must exist in
+      the shell that launches the agent: after editing `~/.bashrc`, open a new
+      terminal and confirm `echo ${#GITHUB_MCP_TOKEN}` prints a non-zero
+      length. If it is empty, the GitHub server fails with "Authorization
+      header is badly formatted".
 - [x] Codex only loads a project's `.codex/` layer when the project is
       trusted. Add to `~/.codex/config.toml` (adjust the path):
 
