@@ -1,0 +1,33 @@
+# --- dependencies and build output (Astro / Vite / Wrangler) ---
+node_modules/
+dist/
+.astro/
+.wrangler/
+.output/
+
+# --- secrets and local environment (never commit) ---
+.env
+.env.*
+!.env.example
+.dev.vars
+.dev.vars.*
+
+# --- test artifacts (Playwright) ---
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+
+# --- logs, OS and editor noise ---
+*.log
+npm-debug.log*
+pnpm-debug.log*
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# --- agent-local state (shared agent config such as .mcp.json, .claude/skills, .agents/ IS tracked) ---
+.claude/settings.local.json

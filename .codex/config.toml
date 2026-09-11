@@ -1,0 +1,11 @@
+# Project-scoped Codex configuration (loaded only when this project is trusted;
+# see SETUP.md). MCP servers here mirror .mcp.json for Claude Code, so both
+# agents get the same tools. No secrets live in this file: GITHUB_MCP_TOKEN is
+# read from the environment.
+
+[mcp_servers.github]
+url = "https://api.githubcopilot.com/mcp/"
+bearer_token_env_var = "GITHUB_MCP_TOKEN"
+
+[mcp_servers.cloudflare-docs]
+url = "https://docs.mcp.cloudflare.com/mcp"
