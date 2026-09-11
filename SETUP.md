@@ -100,10 +100,12 @@ links `.claude/skills`). Remove one: `npx skills remove <name>`.
 - [x] GitHub repository `butterlyn/astro_website`, private, default branch
       `main`. Move it to the company organisation once that is decided
       (`specs/intent.md`, Q-05).
-- [ ] Cloudflare account (the free plan covers Workers Static Assets).
-- [ ] Cloudflare API token from the "Edit Cloudflare Workers" template, plus
-      the Account ID, stored as GitHub Actions secrets. Values are typed at
-      the prompt and never committed:
+- [x] Cloudflare account (the free plan covers Workers Static Assets).
+- [x] Cloudflare API token from the "Edit Cloudflare Workers" template, plus
+      the Account ID, stored as GitHub Actions repository secrets
+      `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` (set 2026-09-11).
+      To rotate, run the same commands again; values are typed at the prompt
+      and never committed:
 
       ```bash
       gh secret set CLOUDFLARE_API_TOKEN
