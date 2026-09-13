@@ -27,11 +27,11 @@ collections:
     label: Homepage
     description: Homepage copy and artwork, using the existing site layout.
     delete: false
-    preview_path: /
     files:
       - name: home
         label: Homepage
         file: src/content/homepage/home.md
+        preview_path: /
         fields:
           - { name: title, label: Browser title, widget: string }
           - { name: eyebrow, label: Small introduction, widget: string }
@@ -52,7 +52,7 @@ collections:
           - name: ctaLink
             label: Button destination
             widget: string
-            hint: Use a site path, an anchor such as \#about, or an https:// link.
+            hint: Use a site path, an anchor such as #about, or an https:// link.
             pattern:
               [
                 '^(\/(?!\/)|#[^\s]|https:\/\/)[^\s]*$',
