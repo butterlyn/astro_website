@@ -10,6 +10,7 @@
     "check:setup": "node scripts/verify-skills.mjs && node --test tests/setup/*.test.mjs",
     "preflight:cloudflare": "node scripts/cloudflare-preflight.mjs",
     "dev": "astro dev",
+    "dev:sveltia": "astro dev --host 127.0.0.1 --port 4402",
     "check": "astro check && tsc --noEmit",
     "check:pipeline": "node --test tests/pipeline/*.test.ts",
     "lint": "biome lint .",
@@ -17,6 +18,7 @@
     "format:check": "prettier --check .",
     "build": "astro build && node scripts/preview-stamp.ts",
     "preview:cloudflare": "wrangler dev --local --ip 127.0.0.1 --port 8787 --show-interactive-dev-session=false",
+    "preview:sveltia": "wrangler dev --config wrangler.sveltia.jsonc --local --ip 127.0.0.1 --port 4520 --inspector-port 4521 --show-interactive-dev-session=false",
     "test:e2e": "playwright test",
     "smoke:preview": "node scripts/preview-smoke.ts"
   },

@@ -3,8 +3,9 @@ name: Dummy preview
 on:
   push:
     branches: [dummy/pipeline-proof-20260912]
-  # Always validate PRs, including documentation-only changes and cleanup markers.
+  # Sveltia content PRs use their trial build; other PRs retain this validation.
   pull_request:
+    branches-ignore: [trial/sveltia]
 
 permissions:
   contents: read

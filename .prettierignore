@@ -6,6 +6,8 @@ test-results/
 playwright-report/
 reports/
 artifact/
+trial/sveltia-auth/vendor/
+TRIAL-HANDOFF.md
 # Preserve the vendored skills and approved setup/specification baseline.
 .agents/
 .claude/

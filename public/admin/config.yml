@@ -1,0 +1,103 @@
+# Trial only. These collection names also isolate the CMS draft branch names.
+backend:
+  name: github
+  repo: butterlyn/astro_website
+  branch: trial/sveltia
+  base_url: https://leer-sveltia-auth.butterlyn.workers.dev
+  auth_methods: [oauth]
+  site_domain: leer-sveltia.butterlyn.workers.dev
+  auth_scope: public_repo
+  cms_label_prefix: sveltia-trial/
+  squash_merges: true
+  preview_context: sveltia/preview
+
+publish_mode: editorial_workflow
+site_url: https://leer-sveltia.butterlyn.workers.dev
+display_url: https://leer-sveltia.butterlyn.workers.dev
+logo_url: /favicon.svg
+media_folder: public/images
+public_folder: /images
+slug:
+  encoding: ascii
+  clean_accents: true
+  sanitize_replacement: "-"
+
+collections:
+  - name: sveltia_homepage
+    label: Homepage
+    description: Homepage copy and artwork, using the existing site layout.
+    delete: false
+    preview_path: /
+    files:
+      - name: home
+        label: Homepage
+        file: src/content/homepage/home.md
+        fields:
+          - { name: title, label: Browser title, widget: string }
+          - { name: eyebrow, label: Small introduction, widget: string }
+          - { name: headline, label: Main heading, widget: string }
+          - { name: summary, label: Introduction, widget: text }
+          - name: image
+            label: Main image
+            widget: image
+            hint: Choose or upload an image. Existing SVG artwork is supported.
+            pattern: ["^/images/.+$", "Choose an image stored in /images/."]
+          - {
+              name: imageAlt,
+              label: Image description (alt text),
+              widget: string,
+            }
+          - { name: imageCaption, label: Image caption, widget: string }
+          - { name: ctaLabel, label: Button text, widget: string }
+          - name: ctaLink
+            label: Button destination
+            widget: string
+            hint: Use a site path, an anchor such as \#about, or an https:// link.
+            pattern:
+              [
+                '^(\/(?!\/)|#[^\s]|https:\/\/)[^\s]*$',
+                "Use a site path, #anchor, or https:// link.",
+              ]
+          - {
+              name: aboutEyebrow,
+              label: About section introduction,
+              widget: string,
+            }
+          - {
+              name: aboutHeadline,
+              label: About section heading,
+              widget: string,
+            }
+          - name: body
+            label: About section text
+            widget: markdown
+            required: false
+          - name: cards
+            label: Information cards
+            widget: list
+            min: 3
+            max: 3
+            summary: "{{fields.title}}"
+            hint: The existing layout has exactly three cards.
+            fields:
+              - { name: title, label: Heading, widget: string }
+              - { name: summary, label: Text, widget: text }
+
+  - name: sveltia_pages
+    label: Pages
+    label_singular: Page
+    description: Add or edit Markdown pages. New pages appear in the sample-page list after publishing.
+    folder: src/content/pages
+    create: true
+    extension: md
+    format: yaml-frontmatter
+    slug: "{{slug}}"
+    preview_path: /pages/{{slug}}/
+    fields:
+      - { name: title, label: Page title, widget: string }
+      - { name: summary, label: Short introduction, widget: text }
+      - name: body
+        label: Page text
+        widget: markdown
+        required: false
+        hint: The page title is the main heading. Start body headings at Heading 2.
