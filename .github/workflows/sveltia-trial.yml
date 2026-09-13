@@ -154,8 +154,6 @@ jobs:
           SVELTIA_PREVIEW_URL: ${{ steps.preview.outputs.url }}
           CONTENT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
-          curl --fail --silent --show-error --retry 5 --retry-all-errors --retry-delay 3 --max-time 15 "$SVELTIA_PREVIEW_URL/build.json" --output "$RUNNER_TEMP/sveltia-build.json"
-          node --input-type=module -e 'import assert from "node:assert/strict"; import {readFileSync} from "node:fs"; assert.equal(JSON.parse(readFileSync(`${process.env.RUNNER_TEMP}/sveltia-build.json`)).commit, process.env.CONTENT_SHA);'
           node scripts/sveltia-ci.mjs status success
           printf 'Trial preview: %s\n\nContent commit: `%s`\n' "$SVELTIA_PREVIEW_URL" "$CONTENT_SHA" >> "$GITHUB_STEP_SUMMARY"
       - name: Report failed deployment

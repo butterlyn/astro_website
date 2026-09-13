@@ -10,6 +10,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname } from "node:path";
+import { waitForPreviewCommit } from "./preview-ready.ts";
 
 const repository = "butterlyn/astro_website";
 const branch = "trial/sveltia";
@@ -142,6 +143,15 @@ switch (process.argv[2]) {
       assert.match(
         url,
         /^https:\/\/(?:pr-[0-9]+-)?leer-sveltia\.butterlyn\.workers\.dev$/,
+      );
+      await waitForPreviewCommit(
+        (path) =>
+          fetch(new URL(path, url), {
+            cache: "no-store",
+            redirect: "error",
+            signal: AbortSignal.timeout(15_000),
+          }),
+        sha,
       );
     }
     await api(`statuses/${sha}`, {

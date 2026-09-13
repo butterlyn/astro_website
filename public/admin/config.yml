@@ -52,7 +52,7 @@ collections:
           - name: ctaLink
             label: Button destination
             widget: string
-            hint: Use a site path, an anchor such as #about, or an https:// link.
+            hint: "Use a site path, an anchor such as #about, or an https:// link."
             pattern:
               [
                 '^(\/(?!\/)|#[^\s]|https:\/\/)[^\s]*$',

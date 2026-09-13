@@ -178,8 +178,8 @@ trial; it uses the existing public-repository Actions and Workers free options.
 
 ## Setup checks and your first login
 
-Setup checks cover installation, type/build/package checks and initial page
-loads. No content-editing scenarios, publishing/discard exercises, role test or
+Setup checks cover installation, type/build/package checks, initial page loads
+and the OAuth popup reaching GitHub's sign-in page. No content-editing scenarios, publishing/discard exercises, role test or
 automated evaluation suite were run. The OAuth app credentials are supplied;
 authorizing the app in your own browser and the first real draft/review/publish
 walkthrough remain yours to perform. No successful signed-in editing session
