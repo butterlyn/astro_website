@@ -1,6 +1,16 @@
+import { readFileSync } from "node:fs";
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { parseFrontmatter } from "astro/markdown";
 import { site } from "../../src/data/site";
+
+// Keep the existing assertions tied to the editable homepage source.
+const { frontmatter: home } = parseFrontmatter(
+  readFileSync(
+    new URL("../../src/content/homepage/home.md", import.meta.url),
+    "utf8",
+  ),
+);
 
 for (const width of [320, 390, 768, 1440]) {
   test(`navigation, layout and accessibility at ${width}px`, async ({
@@ -10,7 +20,7 @@ for (const width of [320, 390, 768, 1440]) {
     const response = await page.goto("/");
     expect(response?.status()).toBe(200);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      site.heading,
+      home.headline,
     );
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute(
       "content",
@@ -28,7 +38,7 @@ for (const width of [320, 390, 768, 1440]) {
     await page.getByRole("link", { name: "Explore the preview" }).click();
     await expect(page).toHaveURL(/#about$/);
     await expect(
-      page.getByRole("heading", { name: site.about.heading }),
+      page.getByRole("heading", { name: home.aboutHeadline }),
     ).toBeInViewport();
     await page.getByRole("link", { name: "Home", exact: true }).click();
     await expect(page).toHaveURL("/");
@@ -102,12 +112,12 @@ test("core content and navigation work without JavaScript", async ({
   const page = await context.newPage();
   await page.goto("http://127.0.0.1:8787/");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    site.heading,
+    home.headline,
   );
   await page.getByRole("link", { name: "Explore the preview" }).click();
   await expect(page).toHaveURL(/#about$/);
   await expect(
-    page.getByRole("heading", { name: site.about.heading }),
+    page.getByRole("heading", { name: home.aboutHeadline }),
   ).toBeVisible();
   await context.close();
 });

@@ -1,0 +1,31 @@
+---
+import { render, type CollectionEntry } from "astro:content";
+import { site } from "../data/site";
+import Page from "./Page.astro";
+
+interface Props {
+  page: CollectionEntry<"pages">;
+}
+
+const { page } = Astro.props;
+const { Content } = await render(page);
+---
+
+<Page
+  title={`${page.data.title} | ${site.name}`}
+  description={page.data.summary}
+>
+  <article class="content-page page-width" aria-labelledby="page-title">
+    <header class="content-heading">
+      <p class="eyebrow">Sample content · Editing playground</p>
+      <h1 id="page-title">{page.data.title}</h1>
+      <p class="intro">{page.data.summary}</p>
+    </header>
+    <div class="prose">
+      <Content />
+    </div>
+    <a class="content-back" href="/pages/">
+      All sample pages <span aria-hidden="true">↗</span>
+    </a>
+  </article>
+</Page>

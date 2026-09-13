@@ -1,5 +1,10 @@
 # Throwaway website preview
 
+The isolated `trial/markdown-baseline` worktree adds a reusable Markdown editing
+playground. Start with [MARKDOWN-PLAYGROUND.md](MARKDOWN-PLAYGROUND.md) for URLs,
+editing steps, the clean baseline tag, and removal. The deployment history below
+describes the inherited throwaway pipeline; this local branch does not deploy.
+
 This branch proves the Astro → GitHub Actions → Cloudflare Workers Static Assets
 pipeline using labeled placeholder content. Read [SETUP.md](SETUP.md) for the
 machine setup, existing secrets and enforced GitHub Free protection.
@@ -9,7 +14,9 @@ Only `dummy/pipeline-proof-20260912` deploys, to the non-production Worker
 The original Worker, `astro-website-dummy-20260912`, remains available at its old
 address until cleanup; future updates deploy only to `leer-preview`.
 The homepage and custom 404 share a static layout
-and require no browser JavaScript. Copy lives in `src/data/site.ts`. Every page
+and require no browser JavaScript. In this worktree, homepage copy lives in
+`src/content/homepage/home.md` and sample prose in `src/content/pages/*.md`;
+shared site metadata and 404 copy remain in `src/data/site.ts`. Every page
 has `noindex` metadata and an `X-Robots-Tag` header; robots.txt disallows crawling.
 This public preview contains no confidential content.
 

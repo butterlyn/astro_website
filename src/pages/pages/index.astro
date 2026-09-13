@@ -1,0 +1,30 @@
+---
+import { getCollection } from "astro:content";
+import Page from "../../layouts/Page.astro";
+import { site } from "../../data/site";
+
+const pages = (await getCollection("pages")).sort((a, b) =>
+  a.data.title.localeCompare(b.data.title, "en"),
+);
+---
+
+<Page
+  title={`Sample pages | ${site.name}`}
+  description="Sample pages for the Markdown editing playground."
+>
+  <section class="content-page page-width" aria-labelledby="pages-title">
+    <p class="eyebrow">Sample content · Editing playground</p>
+    <h1 id="pages-title">Sample pages</h1>
+    <p class="intro">A little room to explore, one page at a time.</p>
+    <ul class="sample-pages">
+      {pages.map((page) => (
+        <li class="preview-card">
+          <h2>
+            <a href={`/pages/${page.id}/`}>{page.data.title}</a>
+          </h2>
+          <p>{page.data.summary}</p>
+        </li>
+      ))}
+    </ul>
+  </section>
+</Page>

@@ -1,0 +1,55 @@
+---
+import { render, type CollectionEntry } from "astro:content";
+import Page from "./Page.astro";
+
+interface Props {
+  page: CollectionEntry<"homepage">;
+}
+
+const { page } = Astro.props;
+const { data } = page;
+const { Content } = await render(page);
+---
+
+<Page title={data.title} description={data.summary}>
+  <section class="hero page-width" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <p class="eyebrow">
+        <span class="status-dot" aria-hidden="true"></span>
+        {data.eyebrow}
+      </p>
+      <h1 id="hero-title">{data.headline}</h1>
+      <p class="intro">{data.summary}</p>
+      <a class="button" href={data.ctaLink}>
+        {data.ctaLabel} <span aria-hidden="true">↗</span>
+      </a>
+    </div>
+    <div class="artwork">
+      <img src={data.image} alt={data.imageAlt} width="950" height="1000" />
+      <div class="artwork-note" aria-hidden="true">
+        <span>{data.imageCaption}</span>
+        <span>↗</span>
+      </div>
+    </div>
+  </section>
+  <section id="about" class="about page-width" aria-labelledby="about-title">
+    <div class="about-heading">
+      <p class="eyebrow">{data.aboutEyebrow}</p>
+      <h2 id="about-title">{data.aboutHeadline}</h2>
+      <div class="prose about-copy">
+        <Content />
+      </div>
+    </div>
+    <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
+      {data.cards.map((card, index) => (
+        <article class="preview-card">
+          <span class="card-number" aria-hidden="true">
+            {String(index + 1).padStart(2, "0")}
+          </span>
+          <h3>{card.title}</h3>
+          <p>{card.summary}</p>
+        </article>
+      ))}
+    </div>
+  </section>
+</Page>

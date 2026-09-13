@@ -155,32 +155,12 @@ nav a {
   border-radius: 11rem 11rem 0.5rem 0.5rem;
   background: #e0e7d3;
 }
-.artwork-orbit {
+.artwork img {
   position: absolute;
-  width: 110%;
-  aspect-ratio: 1;
-  border: 1px solid #9daf91;
-  border-radius: 50%;
-  top: 12%;
-  left: -30%;
-}
-.artwork-circle {
-  position: absolute;
-  width: 56%;
-  aspect-ratio: 1;
-  background: #edb668;
-  border-radius: 50%;
-  top: 22%;
-  left: 28%;
-}
-.artwork-stem {
-  position: absolute;
-  width: 42%;
-  height: 56%;
-  bottom: 0;
-  left: 13%;
-  background: #466348;
-  border-radius: 100% 0 0 0;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 .artwork-note {
   position: absolute;
@@ -190,6 +170,7 @@ nav a {
   color: #fff;
   font-size: 0.7rem;
   letter-spacing: 0.13em;
+  text-transform: uppercase;
 }
 .about {
   padding-block: 4rem 5rem;
@@ -200,7 +181,7 @@ nav a {
   max-width: 42rem;
   margin-bottom: 2.5rem;
 }
-.about-heading > p:last-child {
+.about-copy {
   margin-top: 1.25rem;
   color: var(--color-muted);
 }
@@ -218,6 +199,61 @@ nav a {
 .preview-card p {
   margin-top: 1rem;
   color: var(--color-muted);
+}
+.content-page {
+  padding-block: 4rem 5rem;
+  min-height: 65vh;
+}
+.content-heading {
+  max-width: 48rem;
+}
+.prose {
+  max-width: 65ch;
+}
+.prose > * + * {
+  margin-top: 1.25rem;
+}
+.prose h2 {
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+}
+.prose h2,
+.prose h3 {
+  margin-top: 2rem;
+}
+.prose ul,
+.prose ol {
+  padding-left: 1.5rem;
+}
+.prose ul {
+  list-style: disc;
+}
+.prose ol {
+  list-style: decimal;
+}
+.prose li + li {
+  margin-top: 0.5rem;
+}
+.prose a {
+  text-decoration: underline;
+}
+.prose img {
+  max-width: 100%;
+  height: auto;
+}
+.content-back {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  gap: 1rem;
+  margin-top: 2.5rem;
+}
+.sample-pages {
+  display: grid;
+  gap: 1.25rem;
+  max-width: 48rem;
+}
+.sample-pages h2 {
+  font-size: 1.5rem;
 }
 .site-footer {
   display: flex;
