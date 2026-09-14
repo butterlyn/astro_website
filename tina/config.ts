@@ -142,7 +142,12 @@ export default defineConfig({
     : {}),
   clientId: process.env.TINA_PUBLIC_CLIENT_ID,
   token: process.env.TINA_TOKEN,
-  build: { outputFolder: "admin", publicFolder: ".build/public-editing" },
+  build: {
+    outputFolder: "admin",
+    publicFolder: ".build/public-editing",
+    // Match the local Worker's IPv4 content URL on Linux as well as WSL.
+    host: "127.0.0.1",
+  },
   media: { tina: { publicFolder: "public", mediaRoot: "uploads" } },
   schema: {
     collections: [
