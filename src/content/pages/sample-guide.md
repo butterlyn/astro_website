@@ -1,9 +1,9 @@
 ---
-title: "Sample guide"
-summary: "Sample content for the editing playground. These notes describe an imaginary planning session, not a company offering."
+title: Sample guide
+summary: Sample content for the editing playground. These notes describe an imaginary planning session, not a company offering.
 ---
 
-## A place to begin
+## A place to begin :)
 
 This is **sample content**. Imagine a small group gathering around a table to
 collect ideas. A notebook and a few questions are enough to get started.
