@@ -1,2 +1,23 @@
 strictPeerDependencies: true
 saveExact: true
+verifyDepsBeforeRun: error
+# Reviewed native-binary installers only; new scripts or versions fail closed.
+strictDepBuilds: true
+allowBuilds:
+  esbuild@0.25.12 || 0.28.1 || 0.28.2: true
+  better-sqlite3@12.11.1: true
+  # Optional funding message; no runtime build is needed.
+  core-js@3.50.0: false
+  workerd@1.20260911.1: true
+# Keep future age exceptions explicit. These exact releases came with the
+# reviewed Wrangler 4.131.1 release and its pinned runtime dependencies.
+minimumReleaseAgeStrict: true
+minimumReleaseAgeExclude:
+  - "@cloudflare/workerd-darwin-64@1.20260911.1"
+  - "@cloudflare/workerd-darwin-arm64@1.20260911.1"
+  - "@cloudflare/workerd-linux-64@1.20260911.1"
+  - "@cloudflare/workerd-linux-arm64@1.20260911.1"
+  - "@cloudflare/workerd-windows-64@1.20260911.1"
+  - miniflare@5.20260911.0-alpha
+  - workerd@1.20260911.1
+  - wrangler@4.131.1

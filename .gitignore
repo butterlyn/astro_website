@@ -17,6 +17,8 @@ test-results/
 playwright-report/
 blob-report/
 playwright/.cache/
+reports/
+artifact/
 
 # --- logs, OS and editor noise ---
 *.log
@@ -31,3 +33,9 @@ Thumbs.db
 
 # --- agent-local state (shared agent config such as .mcp.json, .claude/skills, .agents/ IS tracked) ---
 .claude/settings.local.json
+
+# Target-specific generated CMS and public assets
+.build/
+.tina/
+tina/__generated__/
+public/admin/

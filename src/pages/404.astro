@@ -1,0 +1,15 @@
+---
+import Page from "../layouts/Page.astro";
+import { site } from "../data/site";
+---
+
+<Page title={site.notFound.title} description={site.notFound.description}>
+  <section class="not-found page-width" aria-labelledby="not-found-title">
+    <p class="eyebrow">404 · Page not found</p>
+    <h1 id="not-found-title">{site.notFound.heading}</h1>
+    <p class="intro">{site.notFound.description}</p>
+    <a class="button" href="/">
+      Back to home <span aria-hidden="true">↗</span>
+    </a>
+  </section>
+</Page>

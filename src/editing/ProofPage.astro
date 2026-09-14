@@ -1,0 +1,67 @@
+---
+import { tinaField } from "@tinacms/astro";
+import TinaMarkdown from "@tinacms/astro/TinaMarkdown.astro";
+import { sanitizeHref, sanitizeImageSrc } from "@tinacms/astro/sanitize";
+import type { ProofPageQuery } from "../../tina/__generated__/types";
+interface Props {
+  page: ProofPageQuery["proofPage"];
+}
+const { page } = Astro.props;
+---
+
+<h1 data-tina-field={tinaField(page, "title")}>{page.title}</h1>
+<p data-tina-field={tinaField(page, "description")}>{page.description}</p>
+{page.image && (
+  <img
+    data-tina-field={tinaField(page, "image")}
+    src={sanitizeImageSrc(page.image)}
+    alt={page.imageAlt ?? ""}
+    width="96"
+    height="96"
+  />
+)}
+<div data-tina-field={tinaField(page, "body")}>
+  <TinaMarkdown content={page.body} />
+</div>
+<div data-tina-field={tinaField(page, "sections")}>
+  {page.sections?.map(
+    (section) =>
+      section && (
+        <section
+          data-section-id={section.id}
+          data-theme={section.theme}
+          data-tina-field={tinaField(section)}
+        >
+          <h2 data-tina-field={tinaField(section, "heading")}>
+            {section.heading}
+          </h2>
+          <div
+            class="grid grid-cols-1 gap-5 md:grid-cols-3"
+            data-tina-field={tinaField(section, "items")}
+          >
+            {section.items?.map(
+              (item) =>
+                item && (
+                  <article class="preview-card" data-object-id={item.id}>
+                    <h3 data-tina-field={tinaField(item, "heading")}>
+                      {item.heading}
+                    </h3>
+                    <p data-tina-field={tinaField(item, "description")}>
+                      {item.description}
+                    </p>
+                    {item.link && (
+                      <a
+                        data-tina-field={tinaField(item.link)}
+                        href={sanitizeHref(item.link.href)}
+                      >
+                        {item.link.label}
+                      </a>
+                    )}
+                  </article>
+                ),
+            )}
+          </div>
+        </section>
+      ),
+  )}
+</div>
