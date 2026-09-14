@@ -172,9 +172,15 @@ function existing(prs, change) {
     };
   if (prs.length === 1)
     return {
-      outcome: "reused",
+      outcome: change === "needs_attention" ? "needs_attention" : "reused",
       url: `https://github.com/${repository}/pull/${prs[0].number}`,
       changes: change,
+      ...(change === "needs_attention"
+        ? {
+            reason:
+              "Release history needs reconciliation; the existing PR is preserved.",
+          }
+        : {}),
     };
 }
 

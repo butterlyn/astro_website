@@ -100,6 +100,26 @@ test("duplicates require attention without comparison or writes", async () => {
   assert.equal(calls.length, 1);
 });
 
+test("ambiguous history remains a visible failure when a release PR already exists", async () => {
+  const { api, calls } = fixture({
+    lists: [[pr]],
+    comparison: {
+      ...comparison,
+      status: "diverged",
+      behind_by: 1,
+      merge_base_commit: { sha: "c".repeat(40) },
+    },
+  });
+  const result = await ensureReleasePR({ api, paused: false });
+  assert.equal(result.outcome, "needs_attention");
+  assert.equal(result.url, `https://github.com/${repository}/pull/7`);
+  assert.match(result.reason, /existing PR is preserved/);
+  assert.equal(
+    calls.some((call) => call.method !== "GET"),
+    false,
+  );
+});
+
 test("foreign repositories, wrong bases and closed PRs are ignored; pagination is followed", async () => {
   const foreign = {
     ...pr,

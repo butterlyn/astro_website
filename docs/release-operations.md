@@ -2,7 +2,7 @@
 
 The release-PR helper is implemented and tested. Production deployment/recovery and the hosted preview remain gated on the plan's account/runtime evidence. **This bootstrap cannot publish the public site.** No production or preview deployment workflow is installed yet, and neither new Wrangler target has a public hostname mapping.
 
-`development` is the integration/default branch. `main` remains the release branch. Existing `Setup validation` protection is retained. `Website validation` adds source, schema, target, runtime and browser checks without deployment credentials.
+`development` is the integration/default branch. `main` remains the release branch. Both `Setup validation` and `Website validation` are required, retaining strict up-to-date checking and the existing publication controls. Website checks cover source, schema, targets, runtime and browsers without deployment credentials.
 
 Set repository variable `RELEASE_PR_AUTOMATION` to `enabled` to create/reuse a native draft `development` → `main` release PR. Set it to `paused` to stop creation. Missing configuration also pauses bootstrap. Manual dispatch must select `development`. The helper only reads branch/PR state and creates a PR; it has no commit, approval, merge, comment or branch-deletion operations.
 
