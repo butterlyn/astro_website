@@ -49,7 +49,7 @@ The editing target uses a custom Worker entrypoint, verifies Access JWTs for hos
 
 ## Source and release
 
-`development` is the planned default/integration branch; `main` supplies approved public releases. The exact migration state is in the implementation record. Use temporary branches/worktrees for developer changes and preserve the long-lived branch with normal merges.
+`development` is the GitHub default/integration branch; `main` supplies approved public releases. The exact migration state is in the implementation record. Use temporary branches/worktrees for developer changes and preserve the long-lived branch with normal merges.
 
 The [release runbook](docs/release-operations.md) describes the implemented draft-PR helper and the outstanding publication/recovery work. Missing `RELEASE_PR_AUTOMATION` configuration pauses PR creation during bootstrap. No credential-bearing deployment job is installed. The existing public site continues on its prior deployment until a deliberate approved release.
 
