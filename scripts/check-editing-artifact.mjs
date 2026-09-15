@@ -43,6 +43,9 @@ const child = spawn(
     "127.0.0.1",
     "--port",
     "8791",
+    // Wrangler otherwise persists local runtime state beside the built config.
+    "--persist-to",
+    ".wrangler/preview-artifact-state",
     "--show-interactive-dev-session=false",
   ],
   {
