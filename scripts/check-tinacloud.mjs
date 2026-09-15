@@ -9,7 +9,8 @@ assert.equal(process.env.TINA_BRANCH, "development");
 const { version } = JSON.parse(
   await readFile("tina/__generated__/_schema.json", "utf8"),
 );
-assert.ok(Number.isInteger(version.major) && Number.isInteger(version.minor));
+assert.match(String(version.major), /^\d+$/);
+assert.match(String(version.minor), /^\d+$/);
 const response = await fetch(
   `https://content.tinajs.io/${version.major}.${version.minor}/content/${client}/github/development`,
   {
