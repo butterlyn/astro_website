@@ -44,6 +44,10 @@ Send the maintainer the Client ID and confirmation that the GitHub secret is con
 
 ## 4. Verify before onboarding the team
 
+**This step starts after the Cloudflare editor has been deployed.** Completing steps 1–3 connects Tina to GitHub; it does not create `edit.leer.education`. Follow [the Cloudflare setup](cloudflare-editing-setup.md) with the maintainer first. A missing admin page at this point does not indicate an incorrect Tina token.
+
+Once deployment is confirmed, open **https://edit.leer.education/edit/**, sign in through Cloudflare using `admin@leer.education`, reserve editing, and open the editor. Tina then asks for its separate login. `/admin/` requires an active reservation and redirects to `/edit/` when opened directly.
+
 Wait for Tina to index the committed schema. If indexing fails, inspect its error and the committed lock file before using reindex/reset controls. Confirm a hosted text save writes only to `development`, and inspect real upload/deletion commits after the media proof is enabled.
 
 The Free plan advertises two users. Four people sharing one login has **not** been established as one allowed user; confirm the actual entitlement with Tina before onboarding all four. A working shared login is separate evidence from seat eligibility. Personal GitHub and Cloudflare accounts remain individual. [Tina pricing](https://tina.io/pricing), [recorded account research](../specs/research/workflow-feasibility-2026-09-15.md).
