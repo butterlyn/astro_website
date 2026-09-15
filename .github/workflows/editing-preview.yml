@@ -1,0 +1,74 @@
+name: Editing preview
+
+on:
+  workflow_dispatch:
+  workflow_run:
+    workflows: [Website checks]
+    types: [completed]
+    branches: [development]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: editing-preview
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: TinaCloud preview artifact
+    if: >-
+      github.repository == 'butterlyn/astro_website' &&
+      vars.TINA_PUBLIC_CLIENT_ID != '' &&
+      ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/development' && github.actor == 'butterlyn') ||
+      (github.event_name == 'workflow_run' && github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'development' &&
+      github.event.workflow_run.head_repository.full_name == 'butterlyn/astro_website'))
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      actions: read
+    outputs:
+      commit: ${{ steps.source.outputs.commit }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+      - name: Require successful checks on the current development revision
+        id: source
+        run: node scripts/preview-source.mjs
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - name: Install pinned dependencies without deployment credentials
+        run: |
+          npm install --global "$(node -p 'require("./package.json").packageManager')"
+          pnpm install --frozen-lockfile
+      - run: pnpm types:worker
+      - name: Build against the connected TinaCloud development branch
+        run: node scripts/site.mjs build editing cloud
+        env:
+          GITHUB_SHA: ${{ steps.source.outputs.commit }}
+          TINA_PUBLIC_CLIENT_ID: ${{ vars.TINA_PUBLIC_CLIENT_ID }}
+          TINA_TOKEN: ${{ secrets.TINA_TOKEN }}
+          CONTENT_BRANCH: development
+          TINA_BRANCH: development
+      - name: Verify the deployable artifact and authentication boundary
+        run: node scripts/check-editing-artifact.mjs
+        env:
+          PREVIEW_COMMIT: ${{ steps.source.outputs.commit }}
+          WRANGLER_SEND_METRICS: "false"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: editing-${{ steps.source.outputs.commit }}
+          path: dist/editing/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 7
+      - name: Record build identity
+        run: |
+          node -e 'const fs = require("node:fs"); const build = JSON.parse(fs.readFileSync("dist/editing/build.json")); fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `TinaCloud development build verified.\n\nCommit: ${build.commit}\n\nArtifact SHA-256: ${build.digest}\n\nDeployment remains gated on verified Cloudflare Access setup.\n`);'
