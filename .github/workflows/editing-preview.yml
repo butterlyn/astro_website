@@ -13,6 +13,8 @@ permissions:
 concurrency:
   group: editing-preview
   cancel-in-progress: false
+  # Ineligible PR completions must not replace a pending trusted push run.
+  queue: max
 
 jobs:
   build:
