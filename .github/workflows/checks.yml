@@ -1,0 +1,60 @@
+name: Website checks
+
+on:
+  push:
+    branches: [development, main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: website-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Website validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+      - name: Install pinned pnpm
+        run: npm install --global "$(node -p 'require("./package.json").packageManager')"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm types:worker
+      - run: pnpm tina:schema
+      - name: Ensure the checked-in Tina schema matches its source
+        run: git diff --exit-code -- tina/tina-lock.json
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm check
+      - run: pnpm check:pipeline
+      - name: Exercise Tina API feasibility counterexamples
+        run: pnpm test:feasibility
+      - run: pnpm build:editing:local
+        env:
+          # Deliberately non-secret; artifact packaging rejects any occurrence.
+          TINA_TOKEN: leer-nonsecret-build-canary-20260915
+      - run: pnpm build:production
+      - run: node scripts/check-production.mjs
+      - name: Install browser engines
+        run: pnpm exec playwright install --with-deps chromium firefox webkit
+      - run: pnpm test:editing --trace retain-on-failure
+      - name: Retain local editing diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: local-editing-diagnostics-${{ github.run_id }}
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 3
+      - run: pnpm test:e2e
+        env:
+          WRANGLER_SEND_METRICS: "false"
+      # Credentials and deployment are isolated in the trusted preview workflow.

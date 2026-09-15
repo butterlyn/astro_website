@@ -1,0 +1,46 @@
+---
+import TinaIsland from "@tinacms/astro/TinaIsland.astro";
+import { loadProofPage, loadProofGlobal } from "./loaders";
+import ProofPage from "./ProofPage.astro";
+import ProofHeader from "./ProofHeader.astro";
+import ProofFooter from "./ProofFooter.astro";
+import "../styles/global.css";
+const page = await loadProofPage();
+const global = await loadProofGlobal();
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <title>{page.data.proofPage.title}</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">
+      Skip to content
+    </a>
+    <aside class="page-width">
+      Local integration proof. Editing coordination and hosted access have not
+      passed acceptance. <a href="/">Return to saved placeholder</a>
+    </aside>
+    <TinaIsland
+      name="header"
+      wrapper={{ tag: "header", className: "page-width site-header" }}
+    >
+      <ProofHeader global={global.data.proofGlobal} />
+    </TinaIsland>
+    <main id="main" class="page-width" tabindex="-1">
+      <TinaIsland name="page" primary wrapper={{ tag: "article" }}>
+        <ProofPage page={page.data.proofPage} />
+      </TinaIsland>
+    </main>
+    <TinaIsland
+      name="footer"
+      wrapper={{ tag: "footer", className: "page-width site-footer" }}
+    >
+      <ProofFooter global={global.data.proofGlobal} />
+    </TinaIsland>
+  </body>
+</html>

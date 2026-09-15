@@ -268,3 +268,11 @@ pnpm check:setup        # skill integrity and preflight failure-path tests
 For the throwaway pipeline proof, `prompts/dummy-site.md` explicitly permits
 placeholder content and omitting `plan.md`. Keep it on its own branch and use
 the pinned setup dependencies and safeguards above.
+
+## Website migration bootstrap — 15 September 2026
+
+Implementation is in the isolated `development` worktree at `/home/butterlyn/worktrees/astro-website-development`, based on `main` (`fc7672c`). Selected website/tooling files were carried over from the disposable proof without its deployment workflow or cleanup logic. The original working tree’s staged intent/spec and unrelated setup/skills changes were preserved.
+
+Current commands and evidence are in [README.md](README.md), [implementation status](docs/implementation-status.md), and [Tina setup](docs/tina-setup.md). Older disposable-site instructions above describe the previous proof and are not the permanent deployment workflow.
+
+The original stronger editing guard was tested and qualified. The originator then accepted cooperative reservations and manual recovery for uncertain writes. Initial Access/recovery identity: `admin@leer.education`. TinaCloud has not yet been created. Public deployment remains disabled during bootstrap.

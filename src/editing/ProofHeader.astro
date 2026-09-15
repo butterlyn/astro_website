@@ -1,0 +1,24 @@
+---
+import { tinaField } from "@tinacms/astro";
+import { sanitizeHref } from "@tinacms/astro/sanitize";
+import type { ProofGlobalQuery } from "../../tina/__generated__/types";
+interface Props {
+  global: ProofGlobalQuery["proofGlobal"];
+}
+const { global } = Astro.props;
+---
+
+<p data-tina-field={tinaField(global, "name")}>{global.name}</p>
+<nav
+  aria-label="Proof navigation"
+  data-tina-field={tinaField(global, "navigation")}
+>
+  {global.navigation?.map(
+    (link) =>
+      link && (
+        <a href={sanitizeHref(link.href)} data-tina-field={tinaField(link)}>
+          {link.label}
+        </a>
+      ),
+  )}
+</nav>

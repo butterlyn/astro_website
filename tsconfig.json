@@ -1,0 +1,19 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "include": [
+    ".astro/types.d.ts",
+    "src/**/*",
+    "scripts/**/*.ts",
+    "tests/**/*.ts",
+    "*.ts",
+    "astro.config.mjs",
+    "tina/**/*.ts",
+    ".wrangler/worker-configuration.d.ts"
+  ],
+  "exclude": ["dist", "node_modules", "test-results", "playwright-report"],
+  "compilerOptions": {
+    "types": ["node"],
+    "allowImportingTsExtensions": true,
+    "noUncheckedIndexedAccess": true
+  }
+}

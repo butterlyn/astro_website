@@ -1,0 +1,43 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "leer-editing",
+  "compatibility_date": "2026-09-11",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": false,
+  "preview_urls": false,
+  "routes": [{ "pattern": "edit.leer.education", "custom_domain": true }],
+  "send_metrics": false,
+  "observability": {
+    "enabled": true,
+    "traces": {
+      "enabled": true
+    }
+  },
+  "main": "./src/editing/worker.ts",
+  "assets": {
+    "binding": "ASSETS",
+    "run_worker_first": true
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "EDITING_RESERVATION",
+        "class_name": "EditingReservation"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "editing-reservation-v1",
+      "new_sqlite_classes": ["EditingReservation"]
+    }
+  ],
+  "vars": {
+    "ACCESS_TEAM_DOMAIN": "",
+    "ACCESS_AUD": "",
+    "EDITOR_RECOVERY_EMAIL": "admin@leer.education"
+  },
+  "secrets": {
+    "required": ["TINA_TOKEN"]
+  }
+}

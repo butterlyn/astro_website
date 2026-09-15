@@ -1,0 +1,267 @@
+---
+import "../styles/global.css";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <title>Reserve editing | L.E.E.R.</title>
+  </head>
+  <body>
+    <main class="page-width">
+      <h1>Website editing</h1>
+      <p>
+        One person edits at a time. Reviewing remains available while editing is
+        occupied.
+      </p>
+      <p>
+        <a href="/">View the saved placeholder</a> ·{" "}
+        <a
+          href="https://github.com/butterlyn/astro_website/tree/development"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Review saved source
+        </a>
+      </p>
+      <p id="reservation-status" role="status" aria-live="polite">
+        Checking editing availability…
+      </p>
+      <div class="edit-controls">
+        <button id="acquire" type="button">
+          Reserve and load saved content
+        </button>
+        <button id="backup" type="button" hidden>
+          Download a copy of editor text
+        </button>
+      </div>
+      <p>
+        After a lost connection or handoff, copy unsaved text before reloading.
+        A reservation does not cancel saves or uploads already sent to Tina.
+      </p>
+      <label class="handoff">
+        <input id="reconciled" type="checkbox" /> I saved or copied my changes
+        and confirmed all saves and uploads have finished.
+      </label>
+      <div class="edit-controls">
+        <button id="release" type="button" hidden>
+          Close editor and hand off
+        </button>
+        <button id="recover" type="button" hidden>
+          Recover abandoned editing and pause
+        </button>
+        <button id="freeze" type="button" hidden>
+          Pause for developer work or release review
+        </button>
+        <button id="resume" type="button" hidden>
+          Resume after reconciliation
+        </button>
+      </div>
+      <noscript>
+        Enable JavaScript to reserve editing. The saved review website works
+        without it.
+      </noscript>
+    </main>
+    <iframe id="editor" title="Tina website editor" hidden></iframe>
+    <style>
+      main {
+        padding-block: 2rem;
+      }
+      h1 {
+        font-size: clamp(2rem, 6vw, 3rem);
+      }
+      button {
+        min-height: 44px;
+        padding: 0.6rem 1rem;
+        border: 1px solid currentColor;
+        border-radius: 0.5rem;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: wait;
+      }
+      .edit-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-block: 1rem;
+      }
+      .handoff {
+        display: flex;
+        gap: 0.75rem;
+        align-items: start;
+      }
+      input {
+        width: 1.5rem;
+        height: 1.5rem;
+        flex: 0 0 auto;
+      }
+      iframe {
+        width: 100%;
+        height: 85vh;
+        border: 0;
+      }
+    </style>
+    <script>
+      import { parseReservationView } from "./reservation-state";
+      const get = <T extends HTMLElement>(id: string) =>
+        document.getElementById(id) as T;
+      const status = get<HTMLParagraphElement>("reservation-status");
+      const frame = get<HTMLIFrameElement>("editor");
+      const acquire = get<HTMLButtonElement>("acquire");
+      const release = get<HTMLButtonElement>("release");
+      const backup = get<HTMLButtonElement>("backup");
+      const reconciled = get<HTMLInputElement>("reconciled");
+      const session =
+        sessionStorage.getItem("leer.browser-session") ?? crypto.randomUUID();
+      sessionStorage.setItem("leer.browser-session", session);
+      let epoch: number | undefined;
+      let opened = false;
+      let lost = false;
+
+      async function command(action: string) {
+        const response = await fetch("/api/editing-reservation", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Editing-Session": session,
+          },
+          body: JSON.stringify({
+            action,
+            epoch,
+            reconciled: reconciled.checked,
+          }),
+          signal: AbortSignal.timeout(10_000),
+        });
+        if (!response.headers.get("content-type")?.includes("application/json"))
+          throw new Error(
+            "Access or connectivity could not be verified. Keep a copy of any unsaved text.",
+          );
+        const state = parseReservationView(await response.json());
+        for (const id of ["recover", "freeze", "resume"])
+          get<HTMLButtonElement>(id).hidden = !state.recoveryOwner;
+        if (opened && (!state.mine || state.frozen || state.epoch !== epoch))
+          lost = true;
+        status.textContent = lost
+          ? "Editing ownership changed. Your editor stays open so you can copy text. Reload the saved content before editing again."
+          : state.frozen
+            ? "Editing is paused for reconciliation or release review."
+            : state.mine
+              ? "You have reserved editing. Finish saves and uploads before handing over."
+              : state.occupied
+                ? `Editing is occupied by ${state.holder}.${state.unresponsive ? " The browser has stopped responding; contact the maintainer." : " You can keep reviewing or retry later."}`
+                : "Editing is available.";
+        acquire.disabled = state.frozen || (state.occupied && !state.mine);
+        if (action === "acquire" && response.ok) {
+          epoch = state.epoch;
+          sessionStorage.setItem(
+            "leer.editing",
+            JSON.stringify({ session, epoch }),
+          );
+        }
+        if (!response.ok)
+          throw new Error(status.textContent ?? "Editing is unavailable.");
+        return state;
+      }
+      function report(error: unknown) {
+        status.textContent =
+          error instanceof Error
+            ? error.message
+            : "Editing could not be verified.";
+      }
+      acquire.addEventListener("click", async () => {
+        if (opened && !reconciled.checked) {
+          status.textContent =
+            "Copy unsaved work and confirm reconciliation before reloading.";
+          return;
+        }
+        try {
+          await command("acquire");
+          lost = false;
+          frame.src = "/admin/index.html";
+          frame.hidden = false;
+          frame.scrollIntoView({ block: "start", behavior: "instant" });
+          opened = true;
+          release.hidden = false;
+          backup.hidden = false;
+          reconciled.checked = false;
+          acquire.textContent = "Reload the saved content";
+        } catch (error) {
+          report(error);
+        }
+      });
+      function closeEditor() {
+        frame.src = "about:blank";
+        frame.hidden = true;
+        opened = false;
+        lost = false;
+        release.hidden = true;
+        sessionStorage.removeItem("leer.editing");
+      }
+      for (const action of ["release", "recover", "freeze", "resume"])
+        get<HTMLButtonElement>(action).addEventListener("click", async () => {
+          if (!reconciled.checked) {
+            status.textContent =
+              "Confirm that text is saved or copied and uncertain writes have been reconciled first.";
+            return;
+          }
+          if (action !== "resume") closeEditor();
+          try {
+            await command(action);
+            reconciled.checked = false;
+            await command("status");
+          } catch (error) {
+            report(error);
+          }
+        });
+      backup.addEventListener("click", () => {
+        let fields: unknown[] = [];
+        try {
+          fields = Array.from(
+            frame.contentDocument?.querySelectorAll(
+              "textarea, input[type=text], [contenteditable=true]",
+            ) ?? [],
+          ).map((element) => ({
+            label:
+              element.getAttribute("aria-label") ??
+              element.getAttribute("name"),
+            text: "value" in element ? element.value : element.textContent,
+          }));
+        } catch {
+          /* A cross-origin login frame cannot be inspected. */
+        }
+        const blob = new Blob(
+          [
+            JSON.stringify(
+              {
+                savedAt: new Date().toISOString(),
+                note: "Copy of visible editor fields and last attempted save; review before restoring.",
+                fields,
+                lastAttemptedSave: sessionStorage.getItem(
+                  "leer.unsaved-backup",
+                ),
+              },
+              null,
+              2,
+            ),
+          ],
+          { type: "application/json" },
+        );
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "leer-unsaved-text.json";
+        link.click();
+        URL.revokeObjectURL(url);
+      });
+      setInterval(() => {
+        void command(opened && !lost ? "heartbeat" : "status").catch(report);
+      }, 30_000);
+      void command("status").catch(report);
+    </script>
+  </body>
+</html>

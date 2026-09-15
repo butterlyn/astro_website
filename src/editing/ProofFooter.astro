@@ -1,0 +1,10 @@
+---
+import { tinaField } from "@tinacms/astro";
+import type { ProofGlobalQuery } from "../../tina/__generated__/types";
+interface Props {
+  global: ProofGlobalQuery["proofGlobal"];
+}
+const { global } = Astro.props;
+---
+
+<p data-tina-field={tinaField(global, "footer")}>{global.footer}</p>
