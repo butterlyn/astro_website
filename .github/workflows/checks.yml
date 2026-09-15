@@ -45,8 +45,16 @@ jobs:
       - run: node scripts/check-production.mjs
       - name: Install browser engines
         run: pnpm exec playwright install --with-deps chromium firefox webkit
-      - run: pnpm test:editing
+      - run: pnpm test:editing --trace retain-on-failure
+      - name: Retain local editing diagnostics on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: local-editing-diagnostics-${{ github.run_id }}
+          path: test-results/
+          if-no-files-found: ignore
+          retention-days: 3
       - run: pnpm test:e2e
         env:
           WRANGLER_SEND_METRICS: "false"
-      # Bootstrap deliberately contains no credential-bearing deployment job.
+      # Credentials and deployment are isolated in the trusted preview workflow.

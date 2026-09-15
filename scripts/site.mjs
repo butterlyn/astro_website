@@ -72,8 +72,10 @@ if (command === "check") {
           ? ["--local", "--skip-cloud-checks"]
           : ["--content=local"]),
         "-c",
-        "astro build",
+        `${astro} build`,
       ]);
+      if (mode === "cloud")
+        run(process.execPath, ["scripts/check-tinacloud.mjs"]);
       run(process.execPath, ["scripts/build-artifact.mjs"]);
     }
   } else {

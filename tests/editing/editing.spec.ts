@@ -213,16 +213,25 @@ test("Tina visually previews unsaved text, saves Markdown and reopens it; stale 
     if (!admin) throw new Error("Admin frame is missing.");
     await admin.goto(admin.url());
     await expect(input).toHaveValue(title);
+    const save = editor.getByRole("button", { name: "Save", exact: true });
+    await expect(save).toBeDisabled();
+    await expect(
+      editor.frameLocator("iframe").getByRole("heading", { level: 1 }),
+    ).toHaveText(title);
 
     // Recovery invalidates the captured epoch without destroying the form.
     await input.fill("Keep this unsaved recovery text");
+    await expect(
+      editor.frameLocator("iframe").getByRole("heading", { level: 1 }),
+    ).toHaveText("Keep this unsaved recovery text");
+    await expect(save).toBeEnabled();
     expect((await recover("recover")).status()).toBe(200);
     const staleCheck = page.waitForResponse(
       (response) =>
         response.url().endsWith("/api/editing-reservation") &&
         response.request().postDataJSON()?.action === "check",
     );
-    await editor.getByRole("button", { name: "Save", exact: true }).click();
+    await save.click();
     expect((await staleCheck).status()).toBe(423);
     await expect(input).toHaveValue("Keep this unsaved recovery text");
     expect(await readFile(fixture, "utf8")).not.toContain(
@@ -233,10 +242,13 @@ test("Tina visually previews unsaved text, saves Markdown and reopens it; stale 
     );
     expect(retained).toContain("Keep this unsaved recovery text");
   } finally {
-    await page.goto("about:blank");
-    await recover("recover");
-    await recover("resume");
-    // Tests never leave authored content changes in the checkout.
-    await writeFile(fixture, original);
+    try {
+      if (!page.isClosed()) await page.goto("about:blank");
+      await recover("recover");
+      await recover("resume");
+    } finally {
+      // Browser timeout/closure must never prevent restoring authored content.
+      await writeFile(fixture, original);
+    }
   }
 });

@@ -72,3 +72,38 @@ jobs:
       - name: Record build identity
         run: |
           node -e 'const fs = require("node:fs"); const build = JSON.parse(fs.readFileSync("dist/editing/build.json")); fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, `TinaCloud development build verified.\n\nCommit: ${build.commit}\n\nArtifact SHA-256: ${build.digest}\n\nDeployment remains gated on verified Cloudflare Access setup.\n`);'
+
+  deploy:
+    name: Protected editing deployment
+    needs: build
+    if: vars.EDITING_PREVIEW_DEPLOYMENT == 'enabled'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          ref: ${{ needs.build.outputs.commit }}
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .nvmrc
+      - name: Install pinned deployment tool without credentials
+        run: |
+          npm install --global "$(node -p 'require("./package.json").packageManager')"
+          pnpm install --frozen-lockfile
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: editing-${{ needs.build.outputs.commit }}
+          path: dist/editing/
+      - name: Verify Access, current source and artifact; deploy only the editor
+        run: node scripts/deploy-editing.mjs
+        env:
+          PREVIEW_COMMIT: ${{ needs.build.outputs.commit }}
+          EDITING_PREVIEW_DEPLOYMENT: ${{ vars.EDITING_PREVIEW_DEPLOYMENT }}
+          GH_TOKEN: ${{ github.token }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          TINA_TOKEN: ${{ secrets.TINA_TOKEN }}
