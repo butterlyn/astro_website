@@ -78,6 +78,33 @@ function coversEditor(destination) {
   return new RegExp(`^${pattern}$`, "i").test("edit.leer.education");
 }
 
+// Identify which dashboard token list to inspect, without exposing the token
+// value or full identifier. Verification endpoints need no token-list access.
+for (const [kind, scope] of [
+  ["user", "user"],
+  ["account", `accounts/${account}`],
+]) {
+  const verified = await get("/tokens/verify", scope);
+  const validMetadata =
+    verified.available &&
+    /^[a-f0-9]{32}$/i.test(verified.result?.id ?? "") &&
+    ["active", "disabled", "expired"].includes(verified.result?.status);
+  console.log(
+    JSON.stringify({
+      check: `${kind}_token_verification`,
+      ...(validMetadata
+        ? {
+            available: true,
+            tokenStatus: verified.result.status,
+            identifierSuffix: verified.result.id.slice(-8),
+          }
+        : verified.available
+          ? { available: false, status: "invalid_response" }
+          : verified),
+    }),
+  );
+}
+
 const domains = await get("/workers/domains");
 if (domains.available)
   console.log(

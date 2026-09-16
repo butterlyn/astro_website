@@ -154,3 +154,28 @@ test("audit also locates Access applications stored at zone scope", () => {
     "example.cloudflareaccess.com",
   );
 });
+
+test("token verification reports only status and an identifier suffix", () => {
+  const records = audit({
+    "/user/tokens/verify": {
+      body: {
+        success: true,
+        result: {
+          id: `${"d".repeat(24)}0123abcd`,
+          status: "active",
+          value: "token-must-not-appear",
+        },
+      },
+    },
+  });
+  assert.deepEqual(
+    records.find((r) => r.check === "user_token_verification"),
+    {
+      check: "user_token_verification",
+      available: true,
+      tokenStatus: "active",
+      identifierSuffix: "0123abcd",
+    },
+  );
+  assert.ok(!JSON.stringify(records).includes("d".repeat(24)));
+});
