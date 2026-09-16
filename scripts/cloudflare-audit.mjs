@@ -40,10 +40,10 @@ async function get(path, scope = `accounts/${account}`) {
   }
 }
 
-async function list(path) {
+async function list(path, scope) {
   const result = [];
   for (let page = 1; page <= 25; page++) {
-    const data = await get(`${path}?per_page=100&page=${page}`);
+    const data = await get(`${path}?per_page=100&page=${page}`, scope);
     if (!data.available) return data;
     if (!Array.isArray(data.result))
       return { available: false, status: "invalid_response" };
@@ -123,80 +123,89 @@ console.log(
   "This audit makes no configuration changes and prints no credentials.",
 );
 
-const organization = await get("/access/organizations");
-console.log(
-  JSON.stringify(
-    organization.available
-      ? {
-          check: "access_organization",
-          teamDomain: organization.result.auth_domain,
-        }
-      : { check: "access_organization", ...organization },
-  ),
-);
-
-const applications = await list("/access/apps");
-if (applications.available) {
-  const selected = applications.result.filter((app) =>
-    publicDestinations(app).some(coversEditor),
+async function inspectAccess(scope, prefix = "") {
+  const organization = await get("/access/organizations", scope);
+  console.log(
+    JSON.stringify(
+      organization.available
+        ? {
+            check: `${prefix}access_organization`,
+            teamDomain: organization.result.auth_domain,
+          }
+        : { check: `${prefix}access_organization`, ...organization },
+    ),
   );
-  for (const app of selected) {
-    const policies = await list(`/access/apps/${app.id}/policies`);
+
+  const applications = await list("/access/apps", scope);
+  if (applications.available) {
+    const selected = applications.result.filter((app) =>
+      publicDestinations(app).some(coversEditor),
+    );
+    for (const app of selected) {
+      const policies = await list(`/access/apps/${app.id}/policies`, scope);
+      console.log(
+        JSON.stringify({
+          check: `${prefix}access_application`,
+          id: app.id,
+          destinations: publicDestinations(app).filter(coversEditor),
+          destinationCount: publicDestinations(app).length,
+          type: app.type,
+          aud: app.aud,
+          sessionDuration: app.session_duration,
+          allowedIdps: app.allowed_idps,
+          warpAuthentication: app.allow_authenticate_via_warp === true,
+          preflightBypass: app.options_preflight_bypass === true,
+          policies: policies.available
+            ? policies.result.map((policy) => ({
+                decision: policy.decision,
+                includeRules: policy.include?.length,
+                requires: policy.require?.length,
+                excludes: policy.exclude?.length,
+                onlySelectedEditor:
+                  policy.include?.length === 1 &&
+                  policy.include[0]?.email?.email === "admin@leer.education",
+              }))
+            : policies,
+        }),
+      );
+    }
     console.log(
       JSON.stringify({
-        check: "access_application",
-        id: app.id,
-        destinations: publicDestinations(app).filter(coversEditor),
-        destinationCount: publicDestinations(app).length,
-        type: app.type,
-        aud: app.aud,
-        sessionDuration: app.session_duration,
-        allowedIdps: app.allowed_idps,
-        warpAuthentication: app.allow_authenticate_via_warp === true,
-        preflightBypass: app.options_preflight_bypass === true,
-        policies: policies.available
-          ? policies.result.map((policy) => ({
-              decision: policy.decision,
-              includeRules: policy.include?.length,
-              requires: policy.require?.length,
-              excludes: policy.exclude?.length,
-              onlySelectedEditor:
-                policy.include?.length === 1 &&
-                policy.include[0]?.email?.email === "admin@leer.education",
-            }))
-          : policies,
+        check: `${prefix}access_applications`,
+        total: applications.result.length,
+        matched: selected.length,
       }),
     );
-  }
-  console.log(
-    JSON.stringify({
-      check: "access_applications",
-      total: applications.result.length,
-      matched: selected.length,
-    }),
-  );
-} else
-  console.log(
-    JSON.stringify({ check: "access_applications", ...applications }),
-  );
+  } else
+    console.log(
+      JSON.stringify({
+        check: `${prefix}access_applications`,
+        ...applications,
+      }),
+    );
 
-const providers = await list("/access/identity_providers");
-console.log(
-  JSON.stringify(
-    providers.available
-      ? {
-          check: "access_login",
-          oneTimePin: providers.result
-            .filter((provider) => provider.type === "onetimepin")
-            .map((provider) => ({ id: provider.id, type: provider.type })),
-        }
-      : { check: "access_login", ...providers },
-  ),
-);
+  const providers = await list("/access/identity_providers", scope);
+  console.log(
+    JSON.stringify(
+      providers.available
+        ? {
+            check: `${prefix}access_login`,
+            oneTimePin: providers.result
+              .filter((provider) => provider.type === "onetimepin")
+              .map((provider) => ({ id: provider.id, type: provider.type })),
+          }
+        : { check: `${prefix}access_login`, ...providers },
+    ),
+  );
+}
+
+await inspectAccess();
 
 const zones = await get(`?name=leer.education&account.id=${account}`, "zones");
 if (zones.available && zones.result.length === 1) {
   const scope = `zones/${zones.result[0].id}`;
+  // Legacy applications may live at zone scope instead of account scope.
+  await inspectAccess(scope, "zone_");
   const routes = await get("/workers/routes", scope);
   console.log(
     JSON.stringify(

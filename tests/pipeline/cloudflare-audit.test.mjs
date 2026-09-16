@@ -17,7 +17,7 @@ function audit(responses) {
       globalThis.fetch = async (input, options) => {
         if (options.method !== "GET") throw new Error("Mutation attempted");
         const url = new URL(input);
-        const path = url.pathname.replace("/client/v4/accounts/${account}", "");
+        const path = url.pathname.replace("/client/v4", "").replace("/accounts/${account}", "");
         const fixture = responses[path + url.search] ?? responses[path];
         return Response.json(fixture?.body ?? { success: true, result: [] },
           { status: fixture?.status ?? 200 });
@@ -125,4 +125,32 @@ test("audit distinguishes unavailable lists from empty results and redacts error
         errorCodes: [10000],
       },
     );
+});
+
+test("audit also locates Access applications stored at zone scope", () => {
+  const records = audit({
+    "/zones": page([{ id: "test-zone" }]),
+    "/zones/test-zone/access/organizations": {
+      body: {
+        success: true,
+        result: { auth_domain: "example.cloudflareaccess.com" },
+      },
+    },
+    "/zones/test-zone/access/apps": page([
+      { id: "zone-app", domain: "edit.leer.education", aud: "c".repeat(64) },
+    ]),
+  });
+  assert.equal(records.find((r) => r.check === "access_applications").total, 0);
+  assert.equal(
+    records.find((r) => r.check === "zone_access_applications").matched,
+    1,
+  );
+  assert.equal(
+    records.find((r) => r.check === "zone_access_application").aud,
+    "c".repeat(64),
+  );
+  assert.equal(
+    records.find((r) => r.check === "zone_access_organization").teamDomain,
+    "example.cloudflareaccess.com",
+  );
 });
