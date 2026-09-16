@@ -2,7 +2,7 @@
 
 This runbook describes the implemented cooperative reservation. Hosted sign-in, media commits and team acceptance are still pending. See [Tina setup](tina-setup.md) and [implementation status](implementation-status.md).
 
-Open `/edit/` on the protected editing origin. If another person holds editing, continue reviewing the saved site or retry later. When available, choose **Reserve and load saved content**. Keep one editor tab open. Do not duplicate the editor tab: browser duplication can copy its session state.
+Open [the protected editing page](https://edit.leer.education/edit/). If another person holds editing, continue reviewing the saved site or retry later. When available, choose **Reserve and load saved content**. Keep one editor tab open. Do not duplicate the editor tab: browser duplication can copy its session state.
 
 Before handing over, finish saves/uploads and check their outcomes. Copy any unsaved text, confirm the handoff checkbox, then choose **Close editor and hand off**. The next person loads saved content into a fresh editor. Closing a browser or losing a heartbeat never automatically gives somebody else the reservation.
 

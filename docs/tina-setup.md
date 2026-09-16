@@ -8,9 +8,9 @@ The local proof needs no Tina account. The shared hosted editor needs a TinaClou
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Create the Project       | Complete, as reported in the dashboard. Client ID: `2eba03c2-9aff-464b-9d99-7f7a1437577e`.                                                                                                   |
 | Set up your site schema  | Complete, as reported in the dashboard. Our [cloud preview build](https://github.com/butterlyn/astro_website/actions/runs/34930269226) also validated the schema and read the proof content. |
-| Log in through your site | Pending. Cloudflare Access must be configured and the editor deployed first.                                                                                                                 |
+| Log in through your site | Ready for your browser test: Cloudflare Access is verified and the editor is deployed. Continue with step 4; successful hosted login is not yet confirmed.                                   |
 
-The GitHub Client ID variable and `TINA_TOKEN` secret are already configured and work for development content reads. **Continue with [Cloudflare setup](cloudflare-editing-setup.md), then return to step 4 below.** You do not need to create another Tina project, regenerate the token or repeat schema setup to make the hostname work. The dashboard checklist does not host the site.
+The GitHub Client ID variable and `TINA_TOKEN` secret are already configured and work for development content reads. **The [protected editor deployment](https://github.com/butterlyn/astro_website/actions/runs/35063110881) is complete: continue with [step 4](#4-complete-the-first-hosted-login) below.** You do not need to create another Tina project, regenerate the token or repeat schema setup to make the hostname work. The dashboard checklist does not host the site.
 
 ## 1. Prepare the repository
 
