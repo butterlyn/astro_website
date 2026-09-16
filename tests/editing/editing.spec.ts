@@ -74,7 +74,6 @@ test("review and editable regions render on workerd with private responses", asy
   const response = await page.goto("/editing-proof/?tina-edit=1");
   expect(response?.status()).toBe(200);
   expect(response?.headers()["cache-control"]).toContain("no-store");
-  await expect(page.locator("[data-section-id=proof-features]")).toBeVisible();
   await expect(page.locator("[data-tina-island]")).toHaveCount(3);
   const prime = await request.post("/tina-island/page", {
     headers: {
@@ -94,9 +93,25 @@ test("review and editable regions render on workerd with private responses", asy
   if (!payload) throw new Error("No Tina form metadata was registered.");
   const form = JSON.parse(payload);
   const savedTitle = form.data.proofPage.title;
-  const overlayTitle = `Unsaved overlay ${randomUUID()}`;
+  const savedCards = await page.locator(".preview-card h3").allTextContents();
+  const marker = randomUUID();
+  const overlayTitle = `Unsaved overlay ${marker}`;
+  const cards = ["First", "Second"].map((label) => ({
+    id: `overlay-${label.toLowerCase()}`,
+    heading: `${label} overlay card ${marker}`,
+    description: "Unsaved nested content",
+    link: { label: "Saved review", href: "/" },
+  }));
   form.data.proofPage.title = overlayTitle;
-  form.data.proofPage.sections[0].items.reverse();
+  form.data.proofPage.sections = [
+    {
+      _template: "featureGrid",
+      id: "overlay-features",
+      heading: "Unsaved card ordering",
+      theme: "light",
+      items: cards.toReversed(),
+    },
+  ];
   const overlay = await request.post("/tina-island/page", {
     headers: {
       origin: "http://127.0.0.1:4321",
@@ -107,16 +122,17 @@ test("review and editable regions render on workerd with private responses", asy
   expect(overlay.status()).toBe(200);
   expect(overlay.headers()["cache-control"]).toContain("no-store");
   const rendered = await overlay.text();
-  expect(rendered).toContain(overlayTitle);
-  expect(rendered.indexOf("Second example")).toBeLessThan(
-    rendered.indexOf("First example"),
+  await page.setContent(rendered);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    overlayTitle,
+  );
+  await expect(page.locator(".preview-card h3")).toHaveText(
+    cards.toReversed().map((card) => card.heading),
   );
   // A separate ordinary request still sees saved content, never this overlay.
   await page.goto("/editing-proof/");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText(savedTitle);
-  await expect(
-    page.locator("[data-section-id=proof-features] h3").first(),
-  ).toHaveText("First example");
+  await expect(page.locator(".preview-card h3")).toHaveText(savedCards);
 });
 
 test("two browser tabs see an occupied editor, and explicit handoff loads the next editor", async ({
@@ -175,8 +191,8 @@ test("Tina visually previews unsaved text, saves Markdown and reopens it; stale 
     await page.goto("/editing-proof/");
     const savedHeading = page.getByRole("heading", { level: 1 });
     await expect(savedHeading).toBeVisible();
-    const savedTitle = (await savedHeading.innerText()).trim();
-    expect(savedTitle).not.toBe("");
+    const savedTitle = (await savedHeading.textContent()) ?? "";
+    expect(savedTitle.trim()).not.toBe("");
     await page.goto("/edit/");
     await page
       .getByRole("button", { name: "Reserve and load saved content" })
