@@ -81,7 +81,9 @@ Share these identifiers with the maintainer. They can also be retrieved by the a
 
 The GitHub-held Cloudflare token must read the organization, application, policy and login provider before deployment. The current organization request returns HTTP 403, so this check remains unresolved.
 
-Open [Cloudflare → My Profile → API Tokens](https://dash.cloudflare.com/profile/api-tokens). The repository's setup record says the existing deployment token was created on **11 September 2026** from the **Edit Cloudflare Workers** template. Look for that name or the name you gave the website/GitHub deployment token, open its menu and choose **Edit**. If there are several candidates, identify the deployment token before changing one. Account-owned tokens instead appear under **Manage Account → API Tokens**.
+The [token audit](https://github.com/butterlyn/astro_website/actions/runs/35061754289) confirms that GitHub uses an active **account-owned token**, with an identifier ending in `2c65da49`. Open the account containing `leer.education`, then **Manage Account → Account API Tokens** ([direct dashboard link](https://dash.cloudflare.com/?to=/:account/api-tokens)). This token is managed there, rather than in the separate My Profile token list.
+
+The original setup record says it was created on **11 September 2026** from the **Edit Cloudflare Workers** template. Look for that name or the name you gave the website/GitHub deployment token, open its menu and choose **Edit**. If there are several candidates, identify the deployment token before changing one. The identifier suffix is metadata, not part of the secret value. Cloudflare requires the account's Super Administrator role to manage account tokens. [Account token instructions](https://developers.cloudflare.com/fundamentals/api/get-started/account-owned-tokens/).
 
 Under **Permissions**, keep the existing rows and add these two account permissions:
 
