@@ -74,9 +74,6 @@ test("review and editable regions render on workerd with private responses", asy
   const response = await page.goto("/editing-proof/?tina-edit=1");
   expect(response?.status()).toBe(200);
   expect(response?.headers()["cache-control"]).toContain("no-store");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "Editing workflow proof",
-  );
   await expect(page.locator("[data-section-id=proof-features]")).toBeVisible();
   await expect(page.locator("[data-tina-island]")).toHaveCount(3);
   const prime = await request.post("/tina-island/page", {
@@ -96,7 +93,9 @@ test("review and editable regions render on workerd with private responses", asy
     .getAttribute("data-tina-form");
   if (!payload) throw new Error("No Tina form metadata was registered.");
   const form = JSON.parse(payload);
-  form.data.proofPage.title = "Unsaved overlay only";
+  const savedTitle = form.data.proofPage.title;
+  const overlayTitle = `Unsaved overlay ${randomUUID()}`;
+  form.data.proofPage.title = overlayTitle;
   form.data.proofPage.sections[0].items.reverse();
   const overlay = await request.post("/tina-island/page", {
     headers: {
@@ -108,15 +107,13 @@ test("review and editable regions render on workerd with private responses", asy
   expect(overlay.status()).toBe(200);
   expect(overlay.headers()["cache-control"]).toContain("no-store");
   const rendered = await overlay.text();
-  expect(rendered).toContain("Unsaved overlay only");
+  expect(rendered).toContain(overlayTitle);
   expect(rendered.indexOf("Second example")).toBeLessThan(
     rendered.indexOf("First example"),
   );
   // A separate ordinary request still sees saved content, never this overlay.
   await page.goto("/editing-proof/");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "Editing workflow proof",
-  );
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(savedTitle);
   await expect(
     page.locator("[data-section-id=proof-features] h3").first(),
   ).toHaveText("First example");
@@ -163,7 +160,7 @@ test("Tina visually previews unsaved text, saves Markdown and reopens it; stale 
   test.setTimeout(60_000);
   const fixture = "content/proof/pages/proof.md";
   const original = await readFile(fixture, "utf8");
-  const title = "Verified browser save";
+  const title = `Verified browser save ${randomUUID()}`;
   const recovery = randomUUID();
   const recover = (action: string) =>
     request.post("/api/editing-reservation", {
@@ -175,6 +172,11 @@ test("Tina visually previews unsaved text, saves Markdown and reopens it; stale 
       data: { action, reconciled: true },
     });
   try {
+    await page.goto("/editing-proof/");
+    const savedHeading = page.getByRole("heading", { level: 1 });
+    await expect(savedHeading).toBeVisible();
+    const savedTitle = (await savedHeading.innerText()).trim();
+    expect(savedTitle).not.toBe("");
     await page.goto("/edit/");
     await page
       .getByRole("button", { name: "Reserve and load saved content" })
@@ -188,9 +190,9 @@ test("Tina visually previews unsaved text, saves Markdown and reopens it; stale 
     await editor
       .getByRole("link", { name: "Integration proof pages", exact: true })
       .click();
-    await editor.getByText("Editing workflow proof", { exact: true }).click();
+    await editor.getByText(savedTitle, { exact: true }).click();
     const input = editor.locator("input[name=title]");
-    await expect(input).toHaveValue("Editing workflow proof");
+    await expect(input).toHaveValue(savedTitle);
     await input.fill(title);
     await expect(
       editor.frameLocator("iframe").getByRole("heading", { level: 1 }),

@@ -8,7 +8,7 @@ The local proof needs no Tina account. The shared hosted editor needs a TinaClou
 | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Create the Project       | Complete, as reported in the dashboard. Client ID: `2eba03c2-9aff-464b-9d99-7f7a1437577e`.                                                                                                   |
 | Set up your site schema  | Complete, as reported in the dashboard. Our [cloud preview build](https://github.com/butterlyn/astro_website/actions/runs/34930269226) also validated the schema and read the proof content. |
-| Log in through your site | Ready for your browser test: Cloudflare Access is verified and the editor is deployed. Continue with step 4; successful hosted login is not yet confirmed.                                   |
+| Log in through your site | Cloudflare sign-in now reaches the editing reservation page, as confirmed by the originator. Continue with step 4 to open Tina; successful Tina sign-in is not yet confirmed.                |
 
 The GitHub Client ID variable and `TINA_TOKEN` secret are already configured and work for development content reads. **The [protected editor deployment](https://github.com/butterlyn/astro_website/actions/runs/35063110881) is complete: continue with [step 4](#4-complete-the-first-hosted-login) below.** You do not need to create another Tina project, regenerate the token or repeat schema setup to make the hostname work. The dashboard checklist does not host the site.
 
@@ -62,7 +62,7 @@ Once the maintainer confirms deployment:
 
 1. Open **https://edit.leer.education/edit/**.
 2. Sign in through Cloudflare using the code emailed to `admin@leer.education`.
-3. Reserve editing on the website and open the editor.
+3. Choose **Reserve and load saved content**. The page opens the Tina panel below the reservation controls.
 4. Complete Tina's separate sign-in with the account that owns or can access the TinaCloud project.
 5. Open **Integration proof pages → Editing workflow proof**. If Tina offers **Enter Edit Mode**, select it.
 
@@ -70,7 +70,15 @@ Once the maintainer confirms deployment:
 
 ## 5. Verify before onboarding the team
 
-Wait for Tina to index the committed schema. If indexing fails, inspect its error and the committed lock file before using reindex/reset controls. Confirm a hosted text save writes only to `development`, and inspect real upload/deletion commits after the media proof is enabled.
+Wait for Tina to index the committed schema. If indexing fails, inspect its error and the committed lock file before using reindex/reset controls.
+
+For the first hosted text save, work through these steps with the maintainer:
+
+1. Open **Integration proof pages → Editing workflow proof**. Change **Page title** to `Editing workflow proof - hosted save` and check that the preview heading changes before saving.
+2. Choose **Save** and wait for Tina to finish. Report the outcome before making another change; the maintainer will inspect the resulting `development` commit, checks and preview deployment, and verify that `main` and the public build remain unchanged.
+3. Reopen the proof document and confirm that the saved title remains. Once the maintainer has recorded that result, restore `Editing workflow proof` and save again.
+
+This verifies one text-save path. Actual uploads, replacements, deletion, overlapping sessions and recovery still need separate acceptance checks. Upload/deletion commits must affect only `development`.
 
 The Free plan advertises two users. Four people sharing one login has **not** been established as one allowed user; confirm the actual entitlement with Tina before onboarding all four. A working shared login is separate evidence from seat eligibility. Personal GitHub and Cloudflare accounts remain individual. [Tina pricing](https://tina.io/pricing), [recorded account research](../specs/research/workflow-feasibility-2026-09-15.md).
 
