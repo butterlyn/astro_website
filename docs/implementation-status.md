@@ -10,7 +10,7 @@ Started 15 September 2026 (Perth). This record distinguishes implemented/local e
 - GitHub is public. `butterlyn` is currently the only repository collaborator. `main` requires an up-to-date PR, `Setup validation` and `Website validation`, including for admins, with stale-review dismissal and zero required additional reviews. Merge commits are enabled; auto-merge and automatic branch deletion are disabled.
 - Actions default to read-only. The combined PR creation/approval repository setting is enabled for the minimal draft-PR helper; the helper never approves or merges. Secret names: `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_API_TOKEN` and `TINA_TOKEN`. Public variable `TINA_PUBLIC_CLIENT_ID` is `2eba03c2-9aff-464b-9d99-7f7a1437577e`; no secret values are recorded here.
 - Local Wrangler is not authenticated; Cloudflare credentials exist only in GitHub. The new read-only topology-audit workflow uses those credentials without printing them or modifying resources.
-- The originator connected TinaCloud and configured its GitHub values on 15 September. Cloudflare Zero Trust setup is pending. Initial Access and editing-recovery identity: `admin@leer.education`; remaining reviewer addresses are pending.
+- The originator connected TinaCloud and configured its GitHub values on 15 September. Cloudflare Access configuration was verified on 16 September after the deployment token permissions were updated. Initial Access and editing-recovery identity: `admin@leer.education`; remaining reviewer addresses are pending.
 
 ## Implemented scope
 
@@ -84,3 +84,9 @@ No live release, remote media mutation, shared-account acceptance, Access revoca
 - Both setup guides now describe the ordered dashboard steps, One-time PIN's explicit setup, the AUD's **Additional settings** location, the deployment handoff and separate Cloudflare/Tina browser logins. Four audit regression tests pass, including modern and legacy applications, pagination, unavailable-versus-empty results and suppression of unrelated hosts/error details.
 
 - A [token verification audit](https://github.com/butterlyn/astro_website/actions/runs/35061754289) identifies the GitHub-held credential as an active **account-owned token**, identifier suffix `2c65da49`. The user-token verification endpoint rejects it; the account-token endpoint succeeds. This explains why the originator could not find it under My Profile. The guide now directs this repository to **Manage Account → Account API Tokens**. Token verification prints only status and an identifier suffix; a fifth audit regression test verifies this output boundary.
+
+## Access configuration verified — 16 September
+
+The [audit after the token update](https://github.com/butterlyn/astro_website/actions/runs/35062674819) uses the same active account token, identifier suffix `2c65da49`, and now reads the organization, application, policy and One-time PIN provider successfully. The originator's possible token mismatch is resolved by this direct evidence.
+
+The application covers only `edit.leer.education`, uses the supplied team domain/AUD, allows only `admin@leer.education` through One-time PIN, and disables WARP authentication and preflight bypass. Account and zone queries identify the same single application. Its actual session duration is **six hours**; the deployment guard and guide now preserve that shorter setting rather than the initial eight-hour suggestion. Editing DNS reads still return HTTP 403, but the protected Worker custom-domain deployment uses the already-authorized Worker/domain APIs. Hosted deployment and authenticated acceptance are the next steps.

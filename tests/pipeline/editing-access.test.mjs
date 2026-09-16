@@ -22,7 +22,7 @@ const app = {
   type: "self_hosted",
   destinations: [{ type: "public", uri: "edit.leer.education" }],
   aud: config.vars.ACCESS_AUD,
-  session_duration: "8h",
+  session_duration: "6h",
   allowed_idps: ["otp"],
 };
 const policy = {
@@ -66,6 +66,7 @@ test("Access verification rejects missing protection, bypasses, broader identiti
     { "/access/apps": [] },
     { "/access/apps": [{ ...app, aud: "b".repeat(64) }] },
     { "/access/apps": [{ ...app, allowed_idps: [] }] },
+    { "/access/apps": [{ ...app, session_duration: "24h" }] },
     { "/access/apps": [{ ...app, options_preflight_bypass: true }] },
     {
       "/access/apps": [

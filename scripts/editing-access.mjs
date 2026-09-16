@@ -116,7 +116,7 @@ export async function verifyEditingAccess(config, get = cloudflareGet) {
   );
   assert.equal(
     app.session_duration,
-    "8h",
+    "6h",
     "Reconcile session duration with the accepted setup",
   );
   assert.notEqual(app.allow_authenticate_via_warp, true);
