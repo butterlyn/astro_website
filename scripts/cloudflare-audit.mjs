@@ -16,17 +16,66 @@ async function get(path, scope = `accounts/${account}`) {
         signal: AbortSignal.timeout(15_000),
       },
     );
-    if (!response.ok) {
-      await response.body?.cancel();
-      return { available: false, status: response.status };
+    const data = await response.json().catch(() => null);
+    if (!response.ok || data?.success !== true) {
+      // Error messages may contain account details. Only expose numeric codes.
+      const errorCodes = Array.isArray(data?.errors)
+        ? data.errors.map((error) => error.code).filter(Number.isSafeInteger)
+        : [];
+      return {
+        available: false,
+        status: response.ok ? "invalid_response" : response.status,
+        errorCodes,
+      };
     }
-    const data = await response.json();
-    if (data.success !== true || !data.result)
+    if (data.result === undefined)
       return { available: false, status: "invalid_response" };
-    return { available: true, result: data.result };
+    return {
+      available: true,
+      result: data.result,
+      resultInfo: data.result_info,
+    };
   } catch {
     return { available: false, status: "request_failed" };
   }
+}
+
+async function list(path) {
+  const result = [];
+  for (let page = 1; page <= 25; page++) {
+    const data = await get(`${path}?per_page=100&page=${page}`);
+    if (!data.available) return data;
+    if (!Array.isArray(data.result))
+      return { available: false, status: "invalid_response" };
+    result.push(...data.result);
+    if (
+      (data.resultInfo?.total_pages !== undefined &&
+        page >= data.resultInfo.total_pages) ||
+      (data.resultInfo?.total_pages === undefined && data.result.length < 100)
+    )
+      return { available: true, result };
+  }
+  return { available: false, status: "pagination_limit" };
+}
+
+function publicDestinations(app) {
+  return app.destinations?.length
+    ? app.destinations
+        .filter((item) => item.type === "public")
+        .map((item) => item.uri)
+    : app.self_hosted_domains?.length
+      ? app.self_hosted_domains
+      : [app.domain].filter(Boolean);
+}
+
+function coversEditor(destination) {
+  if (typeof destination !== "string") return false;
+  const host = destination.replace(/^https?:\/\//, "").split("/")[0];
+  const pattern = host
+    .split("*")
+    .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+    .join(".*");
+  return new RegExp(`^${pattern}$`, "i").test("edit.leer.education");
 }
 
 const domains = await get("/workers/domains");
@@ -86,24 +135,25 @@ console.log(
   ),
 );
 
-const applications = await get("/access/apps?per_page=1000");
-if (applications.available && Array.isArray(applications.result)) {
+const applications = await list("/access/apps");
+if (applications.available) {
   const selected = applications.result.filter((app) =>
-    ["edit.leer.education", "*.leer.education", "leer.education"].some(
-      (domain) => app.domain === domain || app.domain?.startsWith(`${domain}/`),
-    ),
+    publicDestinations(app).some(coversEditor),
   );
   for (const app of selected) {
-    const policies = await get(`/access/apps/${app.id}/policies`);
+    const policies = await list(`/access/apps/${app.id}/policies`);
     console.log(
       JSON.stringify({
         check: "access_application",
         id: app.id,
-        domain: app.domain,
+        destinations: publicDestinations(app).filter(coversEditor),
+        destinationCount: publicDestinations(app).length,
         type: app.type,
         aud: app.aud,
         sessionDuration: app.session_duration,
         allowedIdps: app.allowed_idps,
+        warpAuthentication: app.allow_authenticate_via_warp === true,
+        preflightBypass: app.options_preflight_bypass === true,
         policies: policies.available
           ? policies.result.map((policy) => ({
               decision: policy.decision,
@@ -119,14 +169,18 @@ if (applications.available && Array.isArray(applications.result)) {
     );
   }
   console.log(
-    JSON.stringify({ check: "access_applications", matched: selected.length }),
+    JSON.stringify({
+      check: "access_applications",
+      total: applications.result.length,
+      matched: selected.length,
+    }),
   );
 } else
   console.log(
     JSON.stringify({ check: "access_applications", ...applications }),
   );
 
-const providers = await get("/access/identity_providers");
+const providers = await list("/access/identity_providers");
 console.log(
   JSON.stringify(
     providers.available

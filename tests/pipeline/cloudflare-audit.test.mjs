@@ -1,0 +1,128 @@
+import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import test from "node:test";
+
+const script = new URL("../../scripts/cloudflare-audit.mjs", import.meta.url);
+const account = "a".repeat(32);
+
+function audit(responses) {
+  const output = execFileSync(process.execPath, ["--input-type=module"], {
+    encoding: "utf8",
+    env: {
+      CLOUDFLARE_ACCOUNT_ID: account,
+      CLOUDFLARE_API_TOKEN: "token-must-not-appear",
+    },
+    input: `
+      const responses = ${JSON.stringify(responses)};
+      globalThis.fetch = async (input, options) => {
+        if (options.method !== "GET") throw new Error("Mutation attempted");
+        const url = new URL(input);
+        const path = url.pathname.replace("/client/v4/accounts/${account}", "");
+        const fixture = responses[path + url.search] ?? responses[path];
+        return Response.json(fixture?.body ?? { success: true, result: [] },
+          { status: fixture?.status ?? 200 });
+      };
+      await import(${JSON.stringify(script.href)});
+    `,
+  });
+  assert.ok(!output.includes("token-must-not-appear"));
+  assert.ok(!output.includes("private-error-message"));
+  assert.ok(!output.includes("unrelated.example.com"));
+  return output
+    .split("\n")
+    .filter((line) => line.startsWith("{"))
+    .map((line) => JSON.parse(line));
+}
+
+function page(result, totalPages = 1) {
+  return {
+    body: { success: true, result, result_info: { total_pages: totalPages } },
+  };
+}
+
+test("audit finds modern destinations on later pages without publishing unrelated hosts", () => {
+  const records = audit({
+    "/access/apps?per_page=100&page=1": page(
+      [{ domain: "unrelated.example.com" }],
+      2,
+    ),
+    "/access/apps?per_page=100&page=2": page(
+      [
+        {
+          id: "editing-app",
+          aud: "b".repeat(64),
+          destinations: [
+            { type: "public", uri: "edit.leer.education" },
+            { type: "public", uri: "unrelated.example.com" },
+          ],
+        },
+      ],
+      2,
+    ),
+    "/access/apps/editing-app/policies": page([
+      {
+        decision: "allow",
+        include: [{ email: { email: "admin@leer.education" } }],
+      },
+    ]),
+  });
+  assert.deepEqual(
+    records.find((r) => r.check === "access_applications"),
+    {
+      check: "access_applications",
+      total: 2,
+      matched: 1,
+    },
+  );
+  const app = records.find((r) => r.check === "access_application");
+  assert.deepEqual(app.destinations, ["edit.leer.education"]);
+  assert.equal(app.destinationCount, 2);
+  assert.equal(app.aud, "b".repeat(64));
+  assert.equal(app.policies[0].onlySelectedEditor, true);
+});
+
+test("audit reports legacy and overlapping wildcard/path Access applications", () => {
+  const records = audit({
+    "/access/apps": page([
+      { id: "legacy", domain: "edit.leer.education" },
+      { id: "wildcard", self_hosted_domains: ["*.leer.education"] },
+      {
+        id: "path",
+        destinations: [{ type: "public", uri: "edit.leer.education/admin/*" }],
+      },
+      { id: "unrelated", domain: "unrelated.example.com" },
+    ]),
+  });
+  assert.equal(
+    records.find((r) => r.check === "access_applications").matched,
+    3,
+  );
+});
+
+test("audit distinguishes unavailable lists from empty results and redacts error details", () => {
+  const denied = {
+    status: 403,
+    body: {
+      success: false,
+      errors: [
+        { code: 10000, message: "private-error-message" },
+        { code: "private-error-message" },
+      ],
+    },
+  };
+  const records = audit({
+    "/access/organizations": denied,
+    "/access/apps?per_page=100&page=1": page([], 2),
+    "/access/apps?per_page=100&page=2": denied,
+  });
+  for (const check of ["access_organization", "access_applications"])
+    assert.deepEqual(
+      records.find((r) => r.check === check),
+      {
+        check,
+        available: false,
+        status: 403,
+        errorCodes: [10000],
+      },
+    );
+});
